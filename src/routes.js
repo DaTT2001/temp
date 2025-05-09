@@ -1,8 +1,25 @@
 import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
+const Login = React.lazy(() => import('./views/pages/login/Login'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
 const Typography = React.lazy(() => import('./views/theme/typography/Typography'))
+
+// Aluminum section
+const AluminumHeatFurnaceT4 = React.lazy(() => import('./views/aluminum/heat-furnace/T4'))
+const AluminumHeatFurnaceT5 = React.lazy(() => import('./views/aluminum/heat-furnace/T5'))
+const AluminumPreheatingFurnaceG1 = React.lazy(() => import('./views/aluminum/preheating-furnace/G1'))
+const AluminumPreheatingFurnaceG2 = React.lazy(() => import('./views/aluminum/preheating-furnace/G2'))
+const AluminumPreheatingFurnaceG3 = React.lazy(() => import('./views/aluminum/preheating-furnace/G3'))
+const AluminumReports = React.lazy(() => import('./views/aluminum/reports/Reports'))
+
+// Steel section
+const SteelPreheatingFurnaceDemo1 = React.lazy(() => import('./views/steel/preheating-furnace/Demo1'))
+const SteelPreheatingFurnaceDemo2 = React.lazy(() => import('./views/steel/preheating-furnace/Demo2'))
+const SteelPreheatingFurnaceDemo3 = React.lazy(() => import('./views/steel/preheating-furnace/Demo3'))
+const SteelHeatFurnaceDemo1 = React.lazy(() => import('./views/steel/heat-furnace/Demo1'))
+const SteelHeatFurnaceDemo2 = React.lazy(() => import('./views/steel/heat-furnace/Demo2'))
+const SteelHeatFurnaceDemo3 = React.lazy(() => import('./views/steel/heat-furnace/Demo3'))
 
 // Base
 const Accordion = React.lazy(() => import('./views/base/accordion/Accordion'))
@@ -49,9 +66,30 @@ const Badges = React.lazy(() => import('./views/notifications/badges/Badges'))
 const Modals = React.lazy(() => import('./views/notifications/modals/Modals'))
 const Toasts = React.lazy(() => import('./views/notifications/toasts/Toasts'))
 
+//User settings
+const Profile = React.lazy(() => import('./views/profile/Profile'))
+   
 const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 
 const routes = [
+  { path: '/login', name: 'Login', element: Login },
+  { path: '/profile', name: 'Profile', element: Profile },
+  // Aluminum section
+  { path: '/aluminum/heat-furnace/t4', name: 'T4', element: AluminumHeatFurnaceT4 },
+  { path: '/aluminum/heat-furnace/t5', name: 'T5', element: AluminumHeatFurnaceT5 },
+  { path: '/aluminum/preheating-furnace/g1', name: 'AP3', element: AluminumPreheatingFurnaceG1 },
+  { path: '/aluminum/preheating-furnace/g2', name: 'AP2', element: AluminumPreheatingFurnaceG2 },
+  { path: '/aluminum/preheating-furnace/g3', name: 'AP1', element: AluminumPreheatingFurnaceG3 },
+  { path: '/aluminum/heat-furnace/heat-furnace-report', name: 'Alu Reports', element: AluminumReports },
+
+  // Steel section
+  { path: '/steel/preheating-furnace/demo1', name: 'Demo1', element: SteelPreheatingFurnaceDemo1 },
+  { path: '/steel/preheating-furnace/demo2', name: 'Demo2', element: SteelPreheatingFurnaceDemo2 },
+  { path: '/steel/preheating-furnace/demo3', name: 'Demo3', element: SteelPreheatingFurnaceDemo3 },
+  { path: '/steel/heat-furnace/demo1', name: 'Demo1', element: SteelHeatFurnaceDemo1 },
+  { path: '/steel/heat-furnace/demo2', name: 'Demo2', element: SteelHeatFurnaceDemo2 },
+  { path: '/steel/heat-furnace/demo3', name: 'Demo3', element: SteelHeatFurnaceDemo3 },
+
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },

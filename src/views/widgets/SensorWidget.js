@@ -10,12 +10,13 @@ import { CChartLine } from '@coreui/react-chartjs'
 import CIcon from '@coreui/icons-react'
 import { cilOptions } from '@coreui/icons'
 import { getStyle } from '@coreui/utils'
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'
 
 
 export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, getTempColor }) => {
     const chartRef = React.useRef(null); // Ref riêng cho mỗi chart
-
+    const navigate = useNavigate();
     const sensorData = data && data[sensorKey];
     const sensors = sensorData && sensorData.sensors;
 
@@ -54,7 +55,7 @@ export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, 
     // Logic cho title
     const title = (
         <>
-            Updated: {sensorData && sensorData.timestamp ? new Date(sensorData.timestamp).toLocaleTimeString() : '--'}
+            {/* Updated: {sensorData && sensorData.timestamp ? new Date(sensorData.timestamp).toLocaleTimeString() : '--'} */}
         </>
     );
 
@@ -94,21 +95,50 @@ export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, 
             point: { radius: 4, hitRadius: 10, hoverRadius: 4 },
         },
     };
-
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+          .sensor-widget-hover {
+            transition: box-shadow 0.2s, transform 0.2s;
+          }
+          .sensor-widget-hover:hover {
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10) !important;
+            transform: translateY(-2px) scale(1.03) !important;
+            z-index: 2;
+          }
+        `;
+        document.head.appendChild(style);
+        return () => { document.head.removeChild(style); };
+    }, []);
     return (
         <CCol sm={6} xl={4} xxl={3}>
             <CWidgetStatsA
+                className="sensor-widget-hover"
                 color={color}
                 value={value}
                 title={title}
                 action={
-                    <CDropdown alignment="end">
-                        <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
+                    <CDropdown alignment="end" style={{ cursor: 'pointer' }}>
+                        <CDropdownToggle
+                            color="transparent"
+                            caret={false}
+                            className="text-white p-0"
+                        >
                             <CIcon icon={cilOptions} />
                         </CDropdownToggle>
                         <CDropdownMenu>
                             <CDropdownItem>Turn off</CDropdownItem>
                             <CDropdownItem>Change temp</CDropdownItem>
+                            <CDropdownItem
+                                onClick={() => {
+                                    const preheatingKeys = ['g1', 'g2', 'g3'];
+                                    if (preheatingKeys.includes(sensorKey.toLowerCase())) {
+                                        navigate(`/aluminum/preheating-furnace/${sensorKey.toLowerCase()}`);
+                                    } else {
+                                        navigate(`/aluminum/heat-furnace/${sensorKey.toLowerCase()}`);
+                                    }
+                                }}
+                            >Details</  CDropdownItem>
                         </CDropdownMenu>
                     </CDropdown>
                 }

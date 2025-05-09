@@ -4,6 +4,7 @@ import { CContainer, CSpinner } from '@coreui/react'
 
 // routes config
 import routes from '../routes'
+import Page404 from '../views/pages/page404/Page404'
 
 const AppContent = () => {
   return (
@@ -24,6 +25,7 @@ const AppContent = () => {
             )
           })}
           <Route path="/" element={<Navigate to="dashboard" replace />} />
+          <Route path="*" element={<Page404 />} />
         </Routes>
       </Suspense>
     </CContainer>

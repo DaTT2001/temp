@@ -1,51 +1,90 @@
 import React from 'react'
-import { CCard, CCardHeader, CCardBody, CCol } from '@coreui/react'
+import { CCard, CCardHeader, CCardBody } from '@coreui/react'
 import { DocsLink } from 'src/components'
-import { CChartLine } from '@coreui/react-chartjs'
 
-const Typography = () => {
-  function random() {
-    return Math.floor(Math.random() * 100)
-  }
+const Typography1 = () => {
   return (
     <>
       <CCard className="mb-4">
         <CCardHeader>
           Headings
+          <DocsLink href="https://coreui.io/docs/content/typography/" />
         </CCardHeader>
         <CCardBody>
-          <CCol xs={12}>
-            <CCard className="mb-4">
-              <CCardHeader>
-                Line Chart <DocsLink name="chart" />
-              </CCardHeader>
-              <CCardBody>
-                <CChartLine
-                  data={{
-                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-                    datasets: [
-                      {
-                        label: 'My First dataset',
-                        backgroundColor: 'rgba(220, 220, 220, 0.2)',
-                        borderColor: 'rgba(220, 220, 220, 1)',
-                        pointBackgroundColor: 'rgba(220, 220, 220, 1)',
-                        pointBorderColor: '#fff',
-                        data: [random(), random(), random(), random(), random(), random(), random()],
-                      },
-                      {
-                        label: 'My Second dataset',
-                        backgroundColor: 'rgba(151, 187, 205, 0.2)',
-                        borderColor: 'rgba(151, 187, 205, 1)',
-                        pointBackgroundColor: 'rgba(151, 187, 205, 1)',
-                        pointBorderColor: '#fff',
-                        data: [random(), random(), random(), random(), random(), random(), random()],
-                      },
-                    ],
-                  }}
-                />
-              </CCardBody>
-            </CCard>
-          </CCol>
+          <p>
+            Documentation and examples for Bootstrap typography, including global settings,
+            headings, body text, lists, and more.
+          </p>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Heading</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>
+                    <code className="highlighter-rouge">&lt;h1&gt;&lt;/h1&gt;</code>
+                  </p>
+                </td>
+                <td>
+                  <span className="h1">h1. Bootstrap heading</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>
+                    <code className="highlighter-rouge">&lt;h2&gt;&lt;/h2&gt;</code>
+                  </p>
+                </td>
+                <td>
+                  <span className="h2">h2. Bootstrap heading</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>
+                    <code className="highlighter-rouge">&lt;h3&gt;&lt;/h3&gt;</code>
+                  </p>
+                </td>
+                <td>
+                  <span className="h3">h3. Bootstrap heading</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>
+                    <code className="highlighter-rouge">&lt;h4&gt;&lt;/h4&gt;</code>
+                  </p>
+                </td>
+                <td>
+                  <span className="h4">h4. Bootstrap heading</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>
+                    <code className="highlighter-rouge">&lt;h5&gt;&lt;/h5&gt;</code>
+                  </p>
+                </td>
+                <td>
+                  <span className="h5">h5. Bootstrap heading</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>
+                    <code className="highlighter-rouge">&lt;h6&gt;&lt;/h6&gt;</code>
+                  </p>
+                </td>
+                <td>
+                  <span className="h6">h6. Bootstrap heading</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </CCardBody>
       </CCard>
       <CCard className="mb-4">
@@ -187,4 +226,4 @@ const Typography = () => {
   )
 }
 
-export default Typography
+export default Typography1

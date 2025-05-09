@@ -1,23 +1,28 @@
 import React, { useEffect, useRef } from 'react'
-
 import { CChartLine } from '@coreui/react-chartjs'
 import { getStyle } from '@coreui/utils'
 
-const MainChart = () => {
+const sensorKeys = ['t4', 't5', 'g1', 'g2', 'g3']
+const sensorLabels = ['Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4', 'Sensor 5', 'Sensor 6', 'Sensor 7', 'Sensor 8']
+const sensorColors = [
+  getStyle('--cui-info'),
+  getStyle('--cui-success'),
+  getStyle('--cui-danger'),
+  getStyle('--cui-warning'),
+  getStyle('--cui-primary'),
+]
+
+const MainChart = ({ data }) => {
   const chartRef = useRef(null)
 
   useEffect(() => {
     document.documentElement.addEventListener('ColorSchemeChange', () => {
       if (chartRef.current) {
         setTimeout(() => {
-          chartRef.current.options.scales.x.grid.borderColor = getStyle(
-            '--cui-border-color-translucent',
-          )
+          chartRef.current.options.scales.x.grid.borderColor = getStyle('--cui-border-color-translucent')
           chartRef.current.options.scales.x.grid.color = getStyle('--cui-border-color-translucent')
           chartRef.current.options.scales.x.ticks.color = getStyle('--cui-body-color')
-          chartRef.current.options.scales.y.grid.borderColor = getStyle(
-            '--cui-border-color-translucent',
-          )
+          chartRef.current.options.scales.y.grid.borderColor = getStyle('--cui-border-color-translucent')
           chartRef.current.options.scales.y.grid.color = getStyle('--cui-border-color-translucent')
           chartRef.current.options.scales.y.ticks.color = getStyle('--cui-body-color')
           chartRef.current.update()
@@ -25,108 +30,91 @@ const MainChart = () => {
       }
     })
   }, [chartRef])
-
-  const random = () => Math.round(Math.random() * 100)
+  const sensorLabelMap = {
+    t4: 'T4',
+    t5: 'T5',
+    g1: '1600T',
+    g2: '1000T',
+    g3: '400T',
+  }
+  // Tạo datasets cho từng cảm biến, chỉ lấy nếu có ít nhất 1 giá trị khác 0
+  const datasets = sensorKeys
+  .map((key, idx) => {
+    const item = data && data[key]
+    if (
+      item &&
+      Array.isArray(item.sensors) &&
+      item.sensors.length === 8 &&
+      item.sensors.some(v => v !== 0)
+    ) {
+      return {
+        label: sensorLabelMap[key] || key.toUpperCase(),
+        backgroundColor: 'transparent',
+        borderColor: sensorColors[idx % sensorColors.length],
+        pointHoverBackgroundColor: sensorColors[idx % sensorColors.length],
+        borderWidth: 2,
+        data: item.sensors,
+      }
+    }
+    return null
+  })
+  .filter(Boolean)
 
   return (
-    <>
-      <CChartLine
-        ref={chartRef}
-        style={{ height: '300px', marginTop: '40px' }}
-        data={{
-          labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-          datasets: [
-            {
-              label: 'My First dataset',
-              backgroundColor: `rgba(${getStyle('--cui-info-rgb')}, .1)`,
-              borderColor: getStyle('--cui-info'),
-              pointHoverBackgroundColor: getStyle('--cui-info'),
-              borderWidth: 2,
-              data: [
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-              ],
-              fill: true,
+    <CChartLine
+      ref={chartRef}
+      style={{ height: '300px', marginTop: '40px' }}
+      data={{
+        labels: sensorLabels,
+        datasets: datasets,
+      }}
+      options={{
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              color: getStyle('--cui-border-color-translucent'),
+              drawOnChartArea: false,
             },
-            {
-              label: 'My Second dataset',
-              backgroundColor: 'transparent',
-              borderColor: getStyle('--cui-success'),
-              pointHoverBackgroundColor: getStyle('--cui-success'),
-              borderWidth: 2,
-              data: [
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-              ],
-            },
-            {
-              label: 'My Third dataset',
-              backgroundColor: 'transparent',
-              borderColor: getStyle('--cui-danger'),
-              pointHoverBackgroundColor: getStyle('--cui-danger'),
-              borderWidth: 1,
-              borderDash: [8, 5],
-              data: [65, 65, 65, 65, 65, 65, 65],
-            },
-          ],
-        }}
-        options={{
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false,
+            ticks: {
+              color: getStyle('--cui-body-color'),
             },
           },
-          scales: {
-            x: {
-              grid: {
-                color: getStyle('--cui-border-color-translucent'),
-                drawOnChartArea: false,
-              },
-              ticks: {
-                color: getStyle('--cui-body-color'),
-              },
+          y: {
+            beginAtZero: true,
+            border: {
+              color: getStyle('--cui-border-color-translucent'),
             },
-            y: {
-              beginAtZero: true,
-              border: {
-                color: getStyle('--cui-border-color-translucent'),
-              },
-              grid: {
-                color: getStyle('--cui-border-color-translucent'),
-              },
-              max: 250,
-              ticks: {
-                color: getStyle('--cui-body-color'),
-                maxTicksLimit: 5,
-                stepSize: Math.ceil(250 / 5),
-              },
+            grid: {
+              color: getStyle('--cui-border-color-translucent'),
+            },
+            // min: 0,GO.
+            // max: 500, // max theo range của bạn
+            ticks: {
+              color: getStyle('--cui-body-color'),
+              maxTicksLimit: 10,
+              stepSize: 50,
             },
           },
-          elements: {
-            line: {
-              tension: 0.4,
-            },
-            point: {
-              radius: 0,
-              hitRadius: 10,
-              hoverRadius: 4,
-              hoverBorderWidth: 3,
-            },
+        },
+        elements: {
+          line: {
+            tension: 0.4,
           },
-        }}
-      />
-    </>
+          point: {
+            radius: 3,
+            hitRadius: 10,
+            hoverRadius: 4,
+            hoverBorderWidth: 3,
+          },
+        },
+      }}
+    />
   )
 }
 

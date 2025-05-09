@@ -6,10 +6,9 @@ import {
   cilChartPie,
   cilCursor,
   cilDescription,
-  cilDrop,
   cilExternalLink,
+  cilFire,
   cilNotes,
-  cilPencil,
   cilPuzzle,
   cilSpeedometer,
   cilStar,
@@ -25,24 +24,110 @@ const _nav = [
   },
   {
     component: CNavTitle,
-    name: 'Theme',
+    name: 'Aluminum section',
   },
   {
-    component: CNavItem,
-    name: 'Colors',
-    to: '/theme/colors',
-    icon: <CIcon icon={cilDrop} customClassName="nav-icon" />,
+    component: CNavGroup,
+    name: 'Heat Furnace',
+    to: '/aluminum/heat-furnace',
+    icon: <CIcon icon={cilFire} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'T4',
+        to: '/aluminum/heat-furnace/t4',
+      },
+      {
+        component: CNavItem,
+        name: 'T5',
+        to: '/aluminum/heat-furnace/t5',
+      },
+      {
+        component: CNavItem,
+        name: 'Reports',
+        to: '/aluminum/heat-furnace/heat-furnace-report',
+      },
+    ],
   },
+
   {
-    component: CNavItem,
-    name: 'Typography',
-    to: '/theme/typography',
-    icon: <CIcon icon={cilPencil} customClassName="nav-icon" />,
+    component: CNavGroup,
+    name: 'Preheating Furnace',
+    to: '/aluminum/preheating-furnace',
+    icon: <CIcon icon={cilFire} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'AP3',
+        to: '/aluminum/preheating-furnace/g1',
+      },
+      {
+        component: CNavItem,
+        name: 'AP2',
+        to: '/aluminum/preheating-furnace/g2',
+      },
+      {
+        component: CNavItem,
+        name: 'AP1',
+        to: '/aluminum/preheating-furnace/g3',
+      },
+    ],
   },
+
+
   {
     component: CNavTitle,
-    name: 'Components',
+    name: 'Steel section',
   },
+
+  {
+    component: CNavGroup,
+    name: 'Preheating Furnace',
+    to: '/steel/preheating-furnace',
+    icon: <CIcon icon={cilFire} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'demo1',
+        to: '/steel/preheating-furnace/demo1',
+      },
+      {
+        component: CNavItem,
+        name: 'demo2',
+        to: '/steel/preheating-furnace/demo2',
+      },
+      {
+        component: CNavItem,
+        name: 'demo3',
+        to: '/steel/preheating-furnace/demo3',
+      },
+    ],
+  },
+
+  {
+    component: CNavGroup,
+    name: 'Heat Furnace',
+    to: '/steel/heat-furnace',
+    icon: <CIcon icon={cilFire} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'demo1',
+        to: '/steel/heat-furnace/demo1',
+      },
+      {
+        component: CNavItem,
+        name: 'demo2',
+        to: '/steel/heat-furnace/demo2',
+      },
+      {
+        component: CNavItem,
+        name: 'demo3',
+        to: '/steel/heat-furnace/demo3',
+      },
+    ],
+  },
+
   {
     component: CNavGroup,
     name: 'Base',

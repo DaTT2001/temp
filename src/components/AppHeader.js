@@ -52,7 +52,7 @@ const AppHeader = () => {
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
         <CHeaderNav className="d-none d-md-flex">
-          <CNavItem>
+          {/* <CNavItem>
             <CNavLink to="/dashboard" as={NavLink}>
               Dashboard
             </CNavLink>
@@ -62,7 +62,7 @@ const AppHeader = () => {
           </CNavItem>
           <CNavItem>
             <CNavLink href="#">Settings</CNavLink>
-          </CNavItem>
+          </CNavItem> */}
         </CHeaderNav>
         <CHeaderNav className="ms-auto">
           <CNavItem>
@@ -70,7 +70,7 @@ const AppHeader = () => {
               <CIcon icon={cilBell} size="lg" />
             </CNavLink>
           </CNavItem>
-          <CNavItem>
+          {/* <CNavItem>
             <CNavLink href="#">
               <CIcon icon={cilList} size="lg" />
             </CNavLink>
@@ -79,7 +79,7 @@ const AppHeader = () => {
             <CNavLink href="#">
               <CIcon icon={cilEnvelopeOpen} size="lg" />
             </CNavLink>
-          </CNavItem>
+          </CNavItem> */}
         </CHeaderNav>
         <CHeaderNav>
           <li className="nav-item py-1">
@@ -101,7 +101,10 @@ const AppHeader = () => {
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                onClick={() => setColorMode('light')}
+                onClick={() => {
+                  setColorMode('light');
+                  window.location.reload();
+                }}
               >
                 <CIcon className="me-2" icon={cilSun} size="lg" /> Light
               </CDropdownItem>
@@ -110,7 +113,10 @@ const AppHeader = () => {
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                onClick={() => setColorMode('dark')}
+                onClick={() => {
+                  setColorMode('dark');
+                  window.location.reload();
+                }}
               >
                 <CIcon className="me-2" icon={cilMoon} size="lg" /> Dark
               </CDropdownItem>
@@ -119,7 +125,10 @@ const AppHeader = () => {
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                onClick={() => setColorMode('auto')}
+                onClick={() => {
+                  setColorMode('auto');
+                  window.location.reload();
+                }}
               >
                 <CIcon className="me-2" icon={cilContrast} size="lg" /> Auto
               </CDropdownItem>
