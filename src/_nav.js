@@ -44,7 +44,7 @@ const _nav = [
       },
       {
         component: CNavItem,
-        name: 'Reports',
+        name: 'Create Report',
         to: '/aluminum/heat-furnace/heat-furnace-report',
       },
     ],
@@ -491,36 +491,21 @@ const _nav = [
     name: 'Extras',
   },
   {
-    component: CNavGroup,
-    name: 'Pages',
-    icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
-    items: [
-      {
-        component: CNavItem,
-        name: 'Login',
-        to: '/login',
-      },
-      {
-        component: CNavItem,
-        name: 'Register',
-        to: '/register',
-      },
-      {
-        component: CNavItem,
-        name: 'Error 404',
-        to: '/404',
-      },
-      {
-        component: CNavItem,
-        name: 'Error 500',
-        to: '/500',
-      },
-    ],
+    component: CNavItem,
+    name: 'Notifications',
+    to: '/notifications',
+    icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Reports Management',
+    to: '/extras/reports-management',
+    icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: 'Docs',
-    href: 'https://coreui.io/react/docs/templates/installation/',
+    href: 'https://datt2001.github.io/mes-docs/',
     icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
   },
 ]

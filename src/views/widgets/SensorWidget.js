@@ -13,18 +13,37 @@ import { getStyle } from '@coreui/utils'
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'
 
-
-export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, getTempColor }) => {
-    const chartRef = React.useRef(null); // Ref riêng cho mỗi chart
+export const SensorWidget = ({
+    sensorKey,
+    sensorName,
+    partCode,
+    offLabel,
+    data,
+    getTempColor,
+    error, // nhận prop error từ WidgetsDropdown
+}) => {
+    const chartRef = React.useRef(null);
     const navigate = useNavigate();
     const sensorData = data && data[sensorKey];
     const sensors = sensorData && sensorData.sensors;
 
     // Logic cho color
-    const color = sensors && typeof sensors[0] === 'number' ? getTempColor(sensors[0]) : 'primary';
+    let color = 'primary';
+    if (error) color = 'danger';
+    else if (sensors && typeof sensors[0] === 'number') color = getTempColor(sensors[0]);
 
     // Logic cho value
     const value = (() => {
+        if (error) {
+            return (
+                <>
+                    <span className="fs-2 fw-bold text-warning" style={{ lineHeight: 1 }}>
+                        Modbus Error
+                    </span>
+                    <div className="fs-6 fw-bold">{offLabel}</div>
+                </>
+            );
+        }
         if (sensors && sensors.length >= 8) {
             if (sensors.every(v => v === 0)) {
                 return (
@@ -45,7 +64,7 @@ export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, 
                         {avg.toFixed(2)}
                     </span>{' '}
                     <span className="fs-6 fw-normal">°C</span>
-                    <div className="fs-6 fw-bold">{sensorName} ({partCode})</div>
+                    <div className="fs-6 fw-bold">{sensorName}</div>
                 </>
             );
         }
@@ -68,7 +87,9 @@ export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, 
                 backgroundColor: 'transparent',
                 borderColor: 'rgba(255,255,255,.55)',
                 pointBackgroundColor: getStyle('--cui-primary'),
-                data: sensors && sensors.length >= 8 ? sensors.slice(2, 8).map(v => (typeof v === 'number' ? v : 0)) : [0, 0, 0, 0, 0, 0],
+                data: sensors && sensors.length >= 8 && !error
+                    ? sensors.slice(2, 8).map(v => (typeof v === 'number' ? v : 0))
+                    : [0, 0, 0, 0, 0, 0],
             },
         ],
     };
@@ -127,8 +148,8 @@ export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, 
                             <CIcon icon={cilOptions} />
                         </CDropdownToggle>
                         <CDropdownMenu>
-                            <CDropdownItem>Turn off</CDropdownItem>
-                            <CDropdownItem>Change temp</CDropdownItem>
+                            <CDropdownItem disabled={error}>Turn off</CDropdownItem>
+                            <CDropdownItem disabled={error}>Change temp</CDropdownItem>
                             <CDropdownItem
                                 onClick={() => {
                                     const preheatingKeys = ['g1', 'g2', 'g3'];
@@ -138,7 +159,8 @@ export const SensorWidget = ({ sensorKey, sensorName, partCode, offLabel, data, 
                                         navigate(`/aluminum/heat-furnace/${sensorKey.toLowerCase()}`);
                                     }
                                 }}
-                            >Details</  CDropdownItem>
+                                disabled={error}
+                            >Details</CDropdownItem>
                         </CDropdownMenu>
                     </CDropdown>
                 }

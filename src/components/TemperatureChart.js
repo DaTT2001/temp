@@ -106,7 +106,6 @@ const TemperatureChart = ({ tableName, chartTitle }) => {
   // Lấy theme hiện tại từ CoreUI (thường là từ Local Storage)
   // Key phải khớp với key dùng trong AppHeader.js
   const { colorMode } = useColorModes('coreui-free-react-admin-template-theme');
-console.log(colorMode); // Log theme hiện tại để kiểm tra
 
   // State quản lý dữ liệu, ngày, loading, lỗi
   const [historicalData, setHistoricalData] = useState([])

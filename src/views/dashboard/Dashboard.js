@@ -59,8 +59,6 @@ import MainChart from './MainChart'
 const Dashboard = () => {
   const latestData = useSelector(state => state.latestData)
   React.useEffect(() => {
-    console.log('latestData', latestData);
-    
     const cleanup = startPolling()
     return () => {
       if (cleanup) cleanup()
@@ -74,14 +72,25 @@ const Dashboard = () => {
 
   let onlineCount = 0
   let offlineCount = 0
+  let errorCount = 0
+
+  const now = Date.now()
+  const MAX_DELAY = 5 * 60 * 1000 // 0.5 giây để test
 
   sensorKeys.forEach(key => {
     const item = latestData[key]
-    if (item && Array.isArray(item.sensors)) {
-      onlineCount += item.sensors.filter(v => v !== 0).length
-      offlineCount += item.sensors.filter(v => v === 0).length
+    if (item && Array.isArray(item.sensors) && item.timestamp) {
+      // Ép về UTC để so sánh chuẩn
+      const ts = new Date(item.timestamp.replace(' ', 'T')).getTime()
+      console.log('now:', now, 'ts:', ts, 'diff:', now - ts)
+      if (isNaN(ts) || ts > now || now - ts > MAX_DELAY) {
+        errorCount += 8
+      } else {
+        onlineCount += item.sensors.filter(v => v !== 0).length
+        offlineCount += item.sensors.filter(v => v === 0).length
+      }
     } else {
-      offlineCount += 8 // nếu không có data thì coi như offline hết
+      errorCount += 8
     }
   })
 
@@ -96,6 +105,12 @@ const Dashboard = () => {
       title: 'Offline',
       value: `${offlineCount} Sensors`,
       percent: Math.round((offlineCount / totalSensors) * 100),
+      color: 'warning',
+    },
+    {
+      title: 'Error Connection',
+      value: `${errorCount} Sensors`,
+      percent: Math.round((errorCount / totalSensors) * 100),
       color: 'danger',
     },
   ]
@@ -127,13 +142,8 @@ const Dashboard = () => {
             xl={{ cols: 5 }}
             className="mb-2 text-center"
           >
-            {progressExample.map((item, index, items) => (
-              <CCol
-                className={classNames({
-                  'd-none d-xl-block': index + 1 === items.length,
-                })}
-                key={index}
-              >
+            {progressExample.map((item, index) => (
+              <CCol key={index}>
                 <div className="text-body-secondary">{item.title}</div>
                 <div className="fw-semibold text-truncate">
                   {item.value} ({item.percent}%)
@@ -144,53 +154,6 @@ const Dashboard = () => {
           </CRow>
         </CCardFooter>
       </CCard>
-      {/* <WidgetsBrand className="mb-4" withCharts /> */}
-      {/* <CRow>
-        <CCol xs>
-          <CCard className="mb-4">
-            <CCardHeader>Traffic {' & '} Sales</CCardHeader>
-            <CCardBody>
-              <CRow>
-                <CCol xs={12} md={6} xl={6}>
-                  <CRow>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-info py-1 px-3">
-                        <div className="text-body-secondary text-truncate small">Target</div>
-                        <div className="fs-5 fw-semibold">9,123</div>
-                      </div>
-                    </CCol>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-danger py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">
-                         NG
-                        </div>
-                        <div className="fs-5 fw-semibold">10</div>
-                      </div>
-                    </CCol>
-                  </CRow>
-                  <hr className="mt-0" />
-                </CCol>
-                <CCol xs={12} md={6} xl={6}>
-                  <CRow>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-warning py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">Ok </div>
-                        <div className="fs-5 fw-semibold">120</div>
-                      </div>
-                    </CCol>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-success py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">Rate NG</div>
-                        <div className="fs-5 fw-semibold">0.11%</div>
-                      </div>
-                    </CCol>
-                  </CRow>
-                </CCol>
-              </CRow>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow> */}
     </>
   )
 }

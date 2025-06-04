@@ -1,39 +1,172 @@
 import React, { useState } from 'react'
 import {
-  CCard, CCardBody, CCardHeader, CForm, CFormInput, CButton, CRow, CCol, CListGroup, CListGroupItem, CSpinner, CAlert,
+  CCard, CCardBody, CCardHeader, CButton, CRow, CCol, CAlert,
 } from '@coreui/react'
-import axios from 'axios'
+import { toast } from 'react-toastify'
+import { startPolling, stopPolling } from 'src/realtimePolling'
+import { useSelector } from 'react-redux'
+import AddProductModal from '../../../components/AddProductModal'
+import PartCodeForm from '../../../components/PartCodeForm'
+import PartInfoList from '../../../components/PartInfoList'
+import ReportResult from '../../../components/ReportResult'
+import CameraSnapshot from '../../../components/CameraSnapshot'
+import LinearProgress from '@mui/material/LinearProgress'
+import { useStep } from 'src/hooks/useStep'
+import {
+  fetchAllProducts,
+  createReport,
+  updateReport,
+  fetchReportData,
+  uploadImage,
+  createProduct,
+  fetchRangeData,
+  updateGoogleSheet,
+} from '../../../api'
+
+// MUI Stepper
+import { Stepper, Step, StepLabel } from '@mui/material'
+import SimpleChart from '../../../components/SimpleChart'
+import { useColorModes } from '@coreui/react'
+import { usePrompt } from '../../../hooks/usePrompt'
+
+const initialProduct = {
+  sale: '', ERPCode: '', heatt4: '', heatt5: '', customer: '', name: '',
+  materialgrade: '', hardness: '', pcsmax: '', weight: '',
+  t4time1: '', t4time2: '', t5time1: '', t5time2: '',
+}
+
+const stepKeys = ['idle', 'checked', 't4', 'wait-t5', 't5', 'done']
+
+function getProgressPercent(start, end) {
+  if (!start || !end) return 0
+  const now = Date.now()
+  const startMs = new Date(start).getTime()
+  const endMs = new Date(end).getTime()
+  if (now <= startMs) return 0
+  if (now >= endMs) return 100
+  return Math.round(((now - startMs) / (endMs - startMs)) * 100)
+}
 
 const Reports = () => {
-  const [partCodes, setPartCodes] = useState([''])
+  const latestData = useSelector(state => state.latestData)
+  const [step, setStep] = useStep()
+  const [t4Done, setT4Done] = useState(false)
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const [partCodes, setPartCodes] = useState(() => {
+    const saved = localStorage.getItem('partCodes')
+    return saved ? JSON.parse(saved) : ['']
+  })
+
   const [partInfos, setPartInfos] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [countdown, setCountdown] = useState(null)
-  const [report, setReport] = useState(null)
   const [processing, setProcessing] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [newProduct, setNewProduct] = useState(initialProduct)
+  const [addLoading, setAddLoading] = useState(false)
+  const [addError, setAddError] = useState('')
+  const [addSuccess, setAddSuccess] = useState('')
+  const [reportId, setReportId] = useState(null)
+  const [report, setReport] = useState(null)
+  const [t4Seconds, setT4Seconds] = useState(0)
+  const [t5Seconds, setT5Seconds] = useState(0)
+  const [t4StartTime, setT4StartTime] = useState(null)
+  const [t4EndTime, setT4EndTime] = useState(null)
+  const [t5StartTime, setT5StartTime] = useState(null)
+  const [t5EndTime, setT5EndTime] = useState(null)
+  const [tick, setTick] = useState(0)
+  const [chartData, setChartData] = useState([])
+  const [showCamera, setShowCamera] = useState(false)
+  const [isDirty, setIsDirty] = useState(false);
 
-  // Giả sử API lấy thông tin linh kiện là /api/parts/:code
-  const fetchPartInfo = async (code) => {
-    // Thay bằng API thực tế của bạn
-    const res = await axios.get(`/api/parts/${code}`)
-    return res.data
-  }
+  usePrompt("Có thay đổi chưa lưu. Bạn chắc chắn muốn rời đi?", isDirty);
+  React.useEffect(() => {
+    let interval
+    if ((step === 't4' || step === 't5') && t4StartTime && t4EndTime) {
+      interval = setInterval(async () => {
+        const now = new Date()
+        const startTime = new Date(step === 't4' ? t4StartTime : t5StartTime).toTimeString().slice(0, 8)
+        const endTime = now.toTimeString().slice(0, 8)
+        // Đổi tên bảng theo step
+        const tableName = step === 't4' ? 't4' : 't5'
+        const data = await fetchRangeData(tableName, now, startTime, endTime)
+        setChartData(data)
+      }, 10000)
+    }
+    return () => clearInterval(interval)
+  }, [step, t4StartTime, t5StartTime, t4EndTime, t5EndTime])
 
-  // Thêm mã linh kiện mới
+  // Polling
+  React.useEffect(() => {
+    const cleanup = startPolling()
+    return () => {
+      if (cleanup) cleanup()
+      stopPolling()
+    }
+  }, [latestData])
+
+  React.useEffect(() => {
+    // Tự động cập nhật tick mỗi 1 giây để kiểm tra tiến trình
+    const interval = setInterval(() => setTick(tick => tick + 1), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Save partCodes to localStorage
+  React.useEffect(() => {
+    localStorage.setItem('partCodes', JSON.stringify(partCodes))
+
+  }, [partCodes, partInfos])
+
+  // Cảnh báo khi đang xử lý
+  React.useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (['t4', 'wait-t5', 't5', 'done'].includes(step)) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [step])
+
+  // Handlers
   const handleAddCode = () => setPartCodes([...partCodes, ''])
-
-  // Xóa mã linh kiện
   const handleRemoveCode = (idx) => setPartCodes(partCodes.filter((_, i) => i !== idx))
-
-  // Nhập mã linh kiện
   const handleChangeCode = (idx, value) => {
     const newCodes = [...partCodes]
     newCodes[idx] = value
     setPartCodes(newCodes)
   }
 
-  // Kiểm tra và lấy thông tin các mã linh kiện
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    setImageFile(file)
+    setImagePreview(file ? URL.createObjectURL(file) : null)
+  }
+
+  const handleAddProduct = async () => {
+    setAddLoading(true)
+    setAddError('')
+    setAddSuccess('')
+    let imageId = null
+    try {
+      if (imageFile) imageId = await uploadImage(imageFile)
+      await createProduct({ ...newProduct, image: imageId })
+      setAddSuccess('Thêm linh kiện thành công!')
+      setNewProduct(initialProduct)
+      setImageFile(null)
+      setImagePreview(null)
+      toast.success('Thêm linh kiện thành công!')
+    } catch {
+      setAddError('Lỗi khi thêm linh kiện!')
+      toast.error('Lỗi khi thêm linh kiện!')
+    }
+    setAddLoading(false)
+  }
+
   const handleCheckParts = async (e) => {
     e.preventDefault()
     setError('')
@@ -41,132 +174,420 @@ const Reports = () => {
     setReport(null)
     setLoading(true)
     try {
-      // Lấy thông tin từng mã
-      const infos = await Promise.all(partCodes.filter(Boolean).map(fetchPartInfo))
-      // Kiểm tra thông số nhiệt độ và thời gian có trùng nhau không
-      const seen = new Set()
-      for (let info of infos) {
-        const key = `${info.temperature}-${info.duration}`
-        if (seen.has(key)) {
-          setError('Có mã linh kiện có cùng thông số nhiệt độ và thời gian, không thể chọn cùng lúc!')
-          setLoading(false)
-          return
-        }
-        seen.add(key)
+      const allProducts = await fetchAllProducts()
+      const infos = partCodes
+        .filter(Boolean)
+        .map(code => allProducts.find(p => p.sale === code || p.ERPCode === code || p.documentId === code))
+        .filter(Boolean)
+      if (infos.length !== partCodes.filter(Boolean).length) {
+        setError('Không tìm thấy mã linh kiện hoặc lỗi kết nối!')
+        setLoading(false)
+        return
+      }
+      const first = infos[0]
+      const allSame = infos.every(info =>
+        info.heatt4 == first.heatt4 &&
+        info.t4time1 == first.t4time1 &&
+        info.t4time2 == first.t4time2 &&
+        info.heatt5 == first.heatt5 &&
+        info.t5time1 == first.t5time1 &&
+        info.t5time2 == first.t5time2
+      )
+      if (!allSame) {
+        setError('All components must have the same temperature and time parameters to be processed in the same batch!')
+        setLoading(false)
+        return
       }
       setPartInfos(infos)
+      setStep('checked')
     } catch (err) {
-      setError('Không tìm thấy mã linh kiện hoặc lỗi kết nối!')
+      console.error('LỖI fetchAllProducts:', err)
+      setError('Part code not found or connection error!')
     }
     setLoading(false)
   }
 
-  // Bắt đầu quy trình
   const handleStart = async () => {
     setError('')
     setProcessing(true)
-    // Kiểm tra kết nối dữ liệu (giả sử API /api/check-connection)
-    try {
-      const res = await axios.get('/api/check-connection')
-      if (!res.data.connected) {
-        setError('Không nhận được dữ liệu từ phần cứng!')
-        setProcessing(false)
-        return
-      }
-    } catch {
-      setError('Lỗi kiểm tra kết nối phần cứng!')
+
+    // Kiểm tra latestData trước khi bắt đầu T4
+    if (
+      !latestData ||
+      !latestData.t4 ||
+      !Array.isArray(latestData.t4.sensors) ||
+      latestData.t4.sensors.every(v => v === 0)
+    ) {
+      setError('Don\'t receive data from hardware (latestData = 0)!')
+      toast.error('Don\'t receive data from hardware (latestData = 0)!')
       setProcessing(false)
       return
     }
-    // Đếm ngược thời gian (lấy thời gian lớn nhất trong các mã)
-    const maxDuration = Math.max(...partInfos.map(i => i.duration))
-    setCountdown(maxDuration)
-    let t = maxDuration
-    const timer = setInterval(() => {
-      t -= 1
-      setCountdown(t)
-      if (t <= 0) {
-        clearInterval(timer)
-        fetchReport()
-      }
-    }, 1000)
+
+    setStep('t4')
+    const maxT4 = Math.max(...partInfos.map(i => (Number(i.t4time1) || 0) + (Number(i.t4time2) || 0)))
+    setT4Seconds(maxT4 * 60)
+    const now = new Date()
+    const pad = n => n.toString().padStart(2, '0')
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    const codeStr = partCodes.filter(Boolean).join(' ')
+    const reportcode = `${dateStr} ${codeStr}`
+    const t4start = now.toISOString()
+    const t4end = new Date(now.getTime() + maxT4 * 60 * 1000).toISOString()
+    setT4StartTime(t4start)
+    setT4EndTime(t4end)
+    try {
+      const id = await createReport({ t4start, t4end, reportcode, sale: codeStr })
+      setReportId(id)
+    } catch {
+      setError('Can not create report!')
+      setProcessing(false)
+    }
   }
 
-  // Lấy dữ liệu và xuất báo cáo
+  const handleStartT5 = async () => {
+    setError('')
+    setProcessing(true)
+    if (
+      !latestData ||
+      !latestData.t5 ||
+      !Array.isArray(latestData.t5.sensors) ||
+      latestData.t5.sensors.every(v => v === 0)
+    ) {
+      setError('Don\'t receive data from hardware (latestData = 0)!')
+      toast.error('Don\'t receive data from hardware (latestData = 0)!')
+      setProcessing(false)
+      return
+    }
+    setStep('t5')
+    const maxT5 = Math.max(...partInfos.map(i => (Number(i.t5time1) || 0) + (Number(i.t5time2) || 0)))
+    setT5Seconds(maxT5 * 60)
+    const now = new Date()
+    const t5start = now.toISOString()
+    const t5end = new Date(now.getTime() + maxT5 * 60 * 1000).toISOString()
+    setT5StartTime(t5start)
+    setT5EndTime(t5end)
+    if (reportId) {
+      try {
+        await updateReport(reportId, { t5start, t5end })
+      } catch {
+        setError('Không thể cập nhật báo cáo!')
+        setProcessing(false)
+      }
+    }
+  }
+
   const fetchReport = async () => {
     setProcessing(false)
     setLoading(true)
     try {
-      // Giả sử API lấy báo cáo là /api/report?from=...&duration=...
-      const res = await axios.get('/api/report', {
-        params: {
-          from: Date.now(), // hoặc thời điểm nhấn bắt đầu
-          duration: Math.max(...partInfos.map(i => i.duration)),
-          codes: partCodes.filter(Boolean).join(','),
-        },
+      const res = await fetchReportData({
+        from: Date.now(),
+        duration: Math.max(...partInfos.map(i => Number(i.t5time2) || 0)),
+        codes: partCodes.filter(Boolean).join(','),
       })
-      setReport(res.data)
+      setReport(res)
+      setStep('done')
     } catch {
       setError('Lỗi lấy dữ liệu báo cáo!')
     }
     setLoading(false)
   }
 
+  React.useEffect(() => {
+    if (step === 't4' && t4StartTime && t4EndTime && getProgressPercent(t4StartTime, t4EndTime) >= 100) {
+      setStep('wait-t5')
+      setT4Done(true)
+      setProcessing(false)
+    }
+    if (step === 't5' && t5StartTime && t5EndTime && getProgressPercent(t5StartTime, t5EndTime) >= 100) {
+      setProcessing(false)
+      setStep('done')
+      fetchReport()
+    }
+    // eslint-disable-next-line
+  }, [tick, step, t4StartTime, t4EndTime, t5StartTime, t5EndTime])
+
   return (
-    <CRow className="justify-content-center mt-4">
-      <CCol md={8}>
+    <CRow className="justify-content-center mt-1">
+      <CCol md={6}>
         <CCard>
-          <CCardHeader>
-            <h4>Báo cáo linh kiện vào lò</h4>
+          <CCardHeader className="d-flex justify-content-between align-items-center">
+            <h4>Component Heat Report</h4>
+            <CButton
+              color="success"
+              className="float-end"
+              onClick={() => setShowModal(true)}
+              disabled={step === 't4' || step === 'wait-t5' || step === 'done' || step === 't5'}
+            >
+              Add new product
+            </CButton>
           </CCardHeader>
-          <CCardBody>
-            <CForm onSubmit={handleCheckParts}>
-              {partCodes.map((code, idx) => (
-                <div key={idx} className="d-flex mb-2">
-                  <CFormInput
-                    placeholder={`Mã linh kiện ${idx + 1}`}
-                    value={code}
-                    onChange={e => handleChangeCode(idx, e.target.value)}
-                    required
-                  />
-                  {partCodes.length > 1 && (
-                    <CButton color="danger" className="ms-2" onClick={() => handleRemoveCode(idx)}>-</CButton>
-                  )}
-                </div>
-              ))}
-              <CButton color="secondary" className="mb-2" onClick={handleAddCode}>Thêm mã</CButton>
-              <br />
-              <CButton color="primary" type="submit" disabled={loading}>
-                {loading ? <CSpinner size="sm" /> : 'Kiểm tra & Lấy thông tin'}
-              </CButton>
-            </CForm>
-            {error && <CAlert color="danger" className="mt-3">{error}</CAlert>}
-            {partInfos.length > 0 && (
-              <div className="mt-4">
-                <h5>Thông số các mã đã chọn:</h5>
-                <CListGroup>
-                  {partInfos.map((info, idx) => (
-                    <CListGroupItem key={idx}>
-                      <strong>{info.code}</strong> - Nhiệt độ: {info.temperature}°C, Thời gian: {info.duration} giây
-                    </CListGroupItem>
-                  ))}
-                </CListGroup>
-                <CButton color="success" className="mt-3" onClick={handleStart} disabled={processing}>
-                  Bắt đầu
-                </CButton>
+          {/* MUI Stepper */}
+          <div
+            style={{
+              background: colorMode === 'dark' ? '#23272f' : '#fff',
+              padding: 16,
+              borderRadius: 8,
+              color: colorMode === 'dark' ? 'white' : '#222',
+            }}
+          >
+            <Stepper
+              activeStep={stepKeys.indexOf(step)}
+              alternativeLabel
+              sx={{
+                '& .MuiStepLabel-label': {
+                  fontSize: 16,
+                  color: colorMode === 'dark' ? '#fff !important' : '#222 !important',
+                  transition: 'color 0.2s',
+                },
+                '& .MuiStepLabel-label.Mui-active': {
+                  color: colorMode === 'dark' ? '#0d6efd !important' : '#1976d2 !important',
+                  fontWeight: 'bold !important',
+                },
+                '& .MuiStepLabel-label.Mui-completed': {
+                  color: colorMode === 'dark' ? '#0d6efd !important' : '#1976d2 !important',
+                },
+                marginBottom: 2,
+              }}
+            >
+              <Step><StepLabel>Enter name</StepLabel></Step>
+              <Step><StepLabel>Check</StepLabel></Step>
+              <Step><StepLabel>T4</StepLabel></Step>
+              <Step><StepLabel>Wait T5</StepLabel></Step>
+              <Step><StepLabel>T5</StepLabel></Step>
+              <Step><StepLabel>Report</StepLabel></Step>
+            </Stepper>
+          </div>
+          {/* Countdown info */}
+          {(step === 't4' || step === 't5') && processing && (
+            <div
+              style={{
+                background: colorMode === 'dark' ? '#23272f' : '#f0f4f8',
+                borderRadius: 8,
+                padding: 16,
+                margin: 16,
+                textAlign: 'center',
+                color: colorMode === 'dark' ? 'white' : '#222',
+              }}
+            >
+              <h5 style={{ marginBottom: 12 }}>
+                {step === 't4' ? 'Running T4 Process' : 'Running T5 Process'}
+              </h5>
+              <LinearProgress
+                variant="determinate"
+                value={
+                  step === 't4'
+                    ? getProgressPercent(t4StartTime, t4EndTime)
+                    : getProgressPercent(t5StartTime, t5EndTime)
+                }
+                sx={{
+                  height: 16,
+                  borderRadius: 8,
+                  marginBottom: 8,
+                  background: colorMode === 'dark' ? '#444' : undefined,
+                  '& .MuiLinearProgress-bar': {
+                    background: colorMode === 'dark' ? '#0d6efd' : undefined,
+                  },
+                }}
+              />
+              <div style={{ fontSize: 18, fontWeight: 'bold', marginTop: 8 }}>
+                {step === 't4'
+                  ? `${getProgressPercent(t4StartTime, t4EndTime)}%`
+                  : `${getProgressPercent(t5StartTime, t5EndTime)}%`}
               </div>
+              <div style={{ fontSize: 14, color: colorMode === 'dark' ? '#aaa' : '#888' }}>
+                Estimated Time: {step === 't4'
+                  ? new Date(t4EndTime).toLocaleTimeString()
+                  : new Date(t5EndTime).toLocaleTimeString()}
+              </div>
+            </div>
+          )}
+          <CCardBody
+            style={{
+              background: colorMode === 'dark' ? '#23272f' : undefined,
+              color: colorMode === 'dark' ? 'white' : undefined,
+            }}
+          >
+            {/* Chỉ hiện form nhập mã ở bước idle và checked */}
+            {(step === 'idle' || step === 'checked') && (
+              <PartCodeForm
+                partCodes={partCodes}
+                loading={loading}
+                handleAddCode={handleAddCode}
+                handleRemoveCode={handleRemoveCode}
+                handleChangeCode={handleChangeCode}
+                handleCheckParts={handleCheckParts}
+              />
             )}
-            {processing && (
-              <CAlert color="info" className="mt-3">
-                Đang kiểm tra kết nối và đếm ngược: {countdown} giây
+
+            {/* Modal thêm sản phẩm luôn có thể mở */}
+            <AddProductModal
+              visible={showModal}
+              onClose={() => setShowModal(false)}
+              onAdd={handleAddProduct}
+              loading={addLoading}
+              error={addError}
+              success={addSuccess}
+              newProduct={newProduct}
+              setNewProduct={setNewProduct}
+              imagePreview={imagePreview}
+              handleImageChange={handleImageChange}
+            />
+
+            {error && <CAlert color="danger" className="mt-3">{error}</CAlert>}
+
+            {/* Hiện danh sách linh kiện và nút bắt đầu T4 ở bước checked */}
+            {step === 'checked' && partInfos.length > 0 && (
+              <PartInfoList partInfos={partInfos} onStart={handleStart} processing={processing} />
+            )}
+
+            {/* Hiện nút xác nhận bắt đầu T5 ở bước wait-t5 */}
+            {step === 'wait-t5' && t4Done && (
+              <CAlert color="warning" className="mt-3 d-flex justify-content-between align-items-center">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span>T4 completed. Press confirm to start T5.</span>
+                  {/* Nút trạng thái T5 */}
+                  <CButton
+                    color={
+                      latestData &&
+                        latestData.t5 &&
+                        Array.isArray(latestData.t5.sensors) &&
+                        latestData.t5.sensors.some(v => v !== 0)
+                        ? 'success'
+                        : 'danger'
+                    }
+                    size="sm"
+                    disabled
+                    style={{ minWidth: 90, fontWeight: 'bold' }}
+                  >
+                    {latestData &&
+                      latestData.t5 &&
+                      Array.isArray(latestData.t5.sensors) &&
+                      latestData.t5.sensors.some(v => v !== 0)
+                      ? 'T5 ONLINE'
+                      : 'T5 OFFLINE'}
+                  </CButton>
+                </div>
+                <CButton color="primary" size="sm" onClick={handleStartT5}>
+                  Confirm to start T5
+                </CButton>
               </CAlert>
             )}
-            {report && (
-              <div className="mt-4">
-                <h5>Kết quả báo cáo:</h5>
-                <pre>{JSON.stringify(report, null, 2)}</pre>
+
+            {/* Hiện kết quả báo cáo ở bước done */}
+            {step === 'done' && reportId && <ReportResult reportId={reportId} partInfos={partInfos} />}
+          </CCardBody>
+        </CCard>
+      </CCol>
+      <CCol md={6}>
+        <CCard className="">
+          <CCardHeader
+            style={{
+              background: colorMode === 'dark' ? '#23272f' : undefined,
+              color: colorMode === 'dark' ? 'white' : undefined,
+            }}
+          >
+            <h5 className="mb-0">Product under heat treatment</h5>
+          </CCardHeader>
+          <CCardBody
+            style={{
+              background: colorMode === 'dark' ? '#23272f' : undefined,
+              color: colorMode === 'dark' ? 'white' : undefined,
+            }}
+          >
+            {partInfos && partInfos.length > 0 ? (
+              <ul style={{ paddingLeft: 0, listStyle: 'none', marginBottom: 0 }}>
+                {partInfos.map((info, idx) => (
+                  <li key={idx} style={{
+                    marginBottom: 16,
+                    padding: 12,
+                    border: '1px solid #444',
+                    borderRadius: 8,
+                    background: colorMode === 'dark' ? '#181b20' : '#fafbfc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    color: colorMode === 'dark' ? 'white' : '#222',
+                    justifyContent: 'space-between',
+                  }}>
+
+                    {info.image?.formats?.thumbnail?.url ? (
+                      <img
+                        src={`http://117.6.40.130:1337${info.image.formats.thumbnail.url}`}
+                        alt={info.name}
+                        style={{ width: 160, height: 120, objectFit: 'fill', borderRadius: 8, border: '1px solid #ddd' }}
+                      />
+                    ) : info.image?.url ? (
+                      <img
+                        src={`http://117.6.40.130:1337${info.image.url}`}
+                        alt={info.name}
+                        style={{ width: 160, height: 120, objectFit: 'fill', borderRadius: 8, border: '1px solid #ddd' }}
+                      />
+                    ) : null}
+                    <div>
+                      <div><b>Sale No:</b> {info.sale || info.ERPCode || info.documentId}</div>
+                      <div><b>Name:</b> {info.name}</div>
+                      <div><b>Customer:</b> {info.customer}</div>
+                      <div><b>T4:</b> {info.heatt4}℃ | {info.t4time1} + {info.t4time2} m</div>
+                      <div><b>T5:</b> {info.heatt5}℃ | {info.t5time1} + {info.t5time2} m</div>
+                    </div>
+                    {/* Camera view */}
+                    <CameraSnapshot url="http://localhost:3001/api/camera/snapshot" />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div style={{ color: colorMode === 'dark' ? '#aaa' : '#888' }}>None products</div>
+            )}
+
+            {/* Modal phóng to camera */}
+            {showCamera && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  background: 'rgba(0,0,0,0.7)',
+                  zIndex: 9999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onClick={() => setShowCamera(false)}
+              >
+                <img
+                  src="http://localhost:3001/api/camera/snapshot"
+                  alt="Camera Snapshot"
+                  style={{
+                    maxWidth: '90vw',
+                    maxHeight: '90vh',
+                    border: '4px solid #fff',
+                    borderRadius: 12,
+                    boxShadow: '0 0 24px #000',
+                  }}
+                  onClick={e => e.stopPropagation()}
+                />
               </div>
             )}
+
+          </CCardBody>
+        </CCard>
+        <CCard className="mt-1">
+          <CCardHeader
+            style={{
+              background: colorMode === 'dark' ? '#23272f' : undefined,
+              color: colorMode === 'dark' ? 'white' : undefined,
+            }}
+          >
+            <b>Temperature Chart (Realtime)</b>
+          </CCardHeader>
+          <CCardBody
+            style={{
+              background: colorMode === 'dark' ? '#23272f' : undefined,
+              color: colorMode === 'dark' ? 'white' : undefined,
+            }}
+          >
+            <SimpleChart data={chartData} colorMode={colorMode} />
           </CCardBody>
         </CCard>
       </CCol>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -18,8 +18,6 @@ import CIcon from '@coreui/icons-react'
 import {
   cilBell,
   cilContrast,
-  cilEnvelopeOpen,
-  cilList,
   cilMenu,
   cilMoon,
   cilSun,
@@ -27,13 +25,15 @@ import {
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
+import { useStep } from '../hooks/useStep'
 
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
-
+  const [notificationCount, setNotificationCount] = useState(0)
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
+  const [step] = useStep()
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -41,45 +41,64 @@ const AppHeader = () => {
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
     })
   }, [])
+  useEffect(() => {
+    // Fetch notifications count
+    fetch('http://192.168.10.87:1337/api/notifications')
+      .then((res) => res.json())
+      .then((data) => {
+        // Giả sử API trả về mảng notifications
+        setNotificationCount(data?.meta?.pagination?.total || 0)
+      })
+      .catch(() => setNotificationCount(0))
+  }, [notificationCount])
+  if (['t4', 'wait-t5', 't5'].includes(step)) return <div className='mt-5'></div>
 
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
       <CContainer className="border-bottom px-4" fluid>
         <CHeaderToggler
-          onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })}
+          onClick={() => {
+            const newSidebarShow = !sidebarShow
+            dispatch({ type: 'set', sidebarShow: newSidebarShow })
+            localStorage.setItem('sidebarShow', JSON.stringify(newSidebarShow))
+          }}
           style={{ marginInlineStart: '-14px' }}
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
         <CHeaderNav className="d-none d-md-flex">
-          {/* <CNavItem>
-            <CNavLink to="/dashboard" as={NavLink}>
-              Dashboard
-            </CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">Users</CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">Settings</CNavLink>
-          </CNavItem> */}
         </CHeaderNav>
         <CHeaderNav className="ms-auto">
           <CNavItem>
-            <CNavLink href="#">
-              <CIcon icon={cilBell} size="lg" />
+            <CNavLink
+              to="/notifications"
+              as={NavLink}
+              disabled={['t4', 'wait-t5', 't5', 'done'].includes(step)}
+            >
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <CIcon icon={cilBell} size="lg" />
+                {notificationCount > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -4,
+                      background: 'red',
+                      color: 'white',
+                      borderRadius: '50%',
+                      padding: '2px 6px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      minWidth: '18px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {notificationCount}
+                  </span>
+                )}
+              </div>
             </CNavLink>
           </CNavItem>
-          {/* <CNavItem>
-            <CNavLink href="#">
-              <CIcon icon={cilList} size="lg" />
-            </CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">
-              <CIcon icon={cilEnvelopeOpen} size="lg" />
-            </CNavLink>
-          </CNavItem> */}
         </CHeaderNav>
         <CHeaderNav>
           <li className="nav-item py-1">
@@ -143,6 +162,7 @@ const AppHeader = () => {
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
       </CContainer>
+
     </CHeader>
   )
 }

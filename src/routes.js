@@ -1,4 +1,5 @@
 import React from 'react'
+import Notifications from './views/notifications/Notifications'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Login = React.lazy(() => import('./views/pages/login/Login'))
@@ -71,6 +72,9 @@ const Profile = React.lazy(() => import('./views/profile/Profile'))
    
 const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 
+//Extras
+const ReportsManagement = React.lazy(() => import('./views/extras/ReportsManagement/ReportsManagement'))
+
 const routes = [
   { path: '/login', name: 'Login', element: Login },
   { path: '/profile', name: 'Profile', element: Profile },
@@ -129,12 +133,13 @@ const routes = [
   { path: '/icons/coreui-icons', name: 'CoreUI Icons', element: CoreUIIcons },
   { path: '/icons/flags', name: 'Flags', element: Flags },
   { path: '/icons/brands', name: 'Brands', element: Brands },
-  { path: '/notifications', name: 'Notifications', element: Alerts, exact: true },
+  { path: '/notifications', name: 'Notifications', element: Notifications, exact: true },
   { path: '/notifications/alerts', name: 'Alerts', element: Alerts },
   { path: '/notifications/badges', name: 'Badges', element: Badges },
   { path: '/notifications/modals', name: 'Modals', element: Modals },
   { path: '/notifications/toasts', name: 'Toasts', element: Toasts },
   { path: '/widgets', name: 'Widgets', element: Widgets },
+  { path: '/extras/reports-management', name: 'Reports Management', element: ReportsManagement },
 ]
 
 export default routes

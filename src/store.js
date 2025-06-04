@@ -11,6 +11,7 @@ const initialState = {
     g3: null,
   },
   isPolling: false,
+  sidebarShow: JSON.parse(localStorage.getItem('sidebarShow') ?? 'true'),
 }
 
 const changeState = (state = initialState, { type, ...rest }) => {

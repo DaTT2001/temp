@@ -11,6 +11,7 @@ import './scss/examples.scss'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { StepProvider } from './hooks/useStep'
 
 // Containers
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -37,36 +38,56 @@ const App = () => {
     }
 
     setColorMode(storedTheme)
+    // Reset step nếu không ở trang heat-furnace-report
+    if (!window.location.hash.includes('/heat-furnace/heat-furnace-report')) {
+      localStorage.setItem('step', 'idle')
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AuthProvider>
-      <HashRouter>
-        <Suspense
-          fallback={
-            <div className="pt-3 text-center">
-              <CSpinner color="primary" variant="grow" />
-            </div>
-          }
-        >
-          <Routes>
-            <Route exact path="/login" name="Login Page" element={<Login />} />
-            <Route exact path="/register" name="Register Page" element={<Register />} />
-            <Route exact path="/404" name="Page 404" element={<Page404 />} />
-            <Route exact path="/500" name="Page 500" element={<Page500 />} />
-            <Route
-              path="*"
-              name="Home"
-              element={
-                <PrivateRoute>
-                  <DefaultLayout />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Suspense>
-      </HashRouter>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <StepProvider>
+        <HashRouter>
+          <Suspense
+            fallback={
+              <div className="pt-3 text-center">
+                <CSpinner color="primary" variant="grow" />
+              </div>
+            }
+          >
+            <Routes>
+              <Route exact path="/login" name="Login Page" element={<Login />} />
+              <Route exact path="/register" name="Register Page" element={<Register />} />
+              <Route exact path="/404" name="Page 404" element={<Page404 />} />
+              <Route exact path="/500" name="Page 500" element={<Page500 />} />
+              <Route
+                path="*"
+                name="Home"
+                element={
+                  <PrivateRoute>
+                    <DefaultLayout />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </HashRouter>
+        <ToastContainer position="top-right" autoClose={3000} />
+        {['t4', 't5', 'wait-t5', 'done'].includes(localStorage.getItem('step')) && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 99999,
+              pointerEvents: 'auto',
+              background: 'transparent', // Không làm mờ, chỉ chặn sự kiện
+            }}
+          />
+        )}
+      </StepProvider>
     </AuthProvider>
   )
 }
