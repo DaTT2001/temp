@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 
 const CameraSnapshot = ({
-    url = 'http://localhost:3001/api/camera/snapshot',
+    url = 'http://117.6.40.130:5001/api/camera/snapshot',
     width = 180,
     height = 120,
     refreshInterval = 5000,

@@ -5,10 +5,12 @@ import {
     CCard, CCardHeader, CCardBody, CAlert, CPagination, CPaginationItem, CFormSelect
 } from '@coreui/react'
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 const PAGE_SIZE = 10
 
 const ReportsManagement = () => {
+    const navigate = useNavigate()
     const [reports, setReports] = useState([])
     const [loading, setLoading] = useState(true)
     const [saleFilter, setSaleFilter] = useState('')
@@ -16,13 +18,39 @@ const ReportsManagement = () => {
     const [pageCount, setPageCount] = useState(1)
     const [total, setTotal] = useState(0)
     const [sortOrder, setSortOrder] = useState('desc') // 'desc' = new → old, 'asc' = old → new
+    const [statusFilter, setStatusFilter] = useState('all')
 
-    const fetchReports = async (saleNo = '', pageNum = 1, order = 'desc') => {
+    // const fetchReports = async (saleNo = '', pageNum = 1, order = 'desc') => {
+    //     setLoading(true)
+    //     try {
+    //         let url = `http://117.6.40.130:1337/api/reports?pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
+    //         if (saleNo) {
+    //             url += `&filters[sale][$contains]=${encodeURIComponent(saleNo)}`
+    //         }
+    //         url += `&sort=createdAt:${order}`
+    //         const res = await axios.get(url)
+    //         setReports(res.data.data || [])
+    //         setPageCount(res.data.meta?.pagination?.pageCount || 1)
+    //         setTotal(res.data.meta?.pagination?.total || 0)
+    //     } catch (err) {
+    //         setReports([])
+    //         setPageCount(1)
+    //         setTotal(0)
+    //     }
+    //     setLoading(false)
+    // }
+    const fetchReports = async (saleNo = '', pageNum = 1, order = 'desc', status = 'all') => {
         setLoading(true)
         try {
             let url = `http://117.6.40.130:1337/api/reports?pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
             if (saleNo) {
                 url += `&filters[sale][$contains]=${encodeURIComponent(saleNo)}`
+            }
+            if (status === 'running') {
+                url += `&filters[isFinished][$eq]=false`
+            }
+            if (status === 'done') {
+                url += `&filters[reportLink][$ne]=null&filters[reportLink][$ne]=`
             }
             url += `&sort=createdAt:${order}`
             const res = await axios.get(url)
@@ -38,8 +66,8 @@ const ReportsManagement = () => {
     }
 
     useEffect(() => {
-        fetchReports(saleFilter, page, sortOrder)
-    }, [page, saleFilter, sortOrder])
+        fetchReports(saleFilter, page, sortOrder, statusFilter)
+    }, [page, saleFilter, sortOrder, statusFilter])
 
     const handleFilterChange = (e) => {
         setSaleFilter(e.target.value)
@@ -48,6 +76,11 @@ const ReportsManagement = () => {
 
     const handleSortChange = (e) => {
         setSortOrder(e.target.value)
+        setPage(1)
+    }
+
+    const handleStatusChange = (status) => {
+        setStatusFilter(status)
         setPage(1)
     }
 
@@ -64,6 +97,32 @@ const ReportsManagement = () => {
                             onChange={handleFilterChange}
                         />
                     </CInputGroup>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <CButton
+                            color={statusFilter === 'all' ? 'primary' : 'secondary'}
+                            size="sm"
+                            variant={statusFilter === 'all' ? '' : 'outline'}
+                            onClick={() => handleStatusChange('all')}
+                        >
+                            All
+                        </CButton>
+                        <CButton
+                            color={statusFilter === 'running' ? 'primary' : 'secondary'}
+                            size="sm"
+                            variant={statusFilter === 'running' ? '' : 'outline'}
+                            onClick={() => handleStatusChange('running')}
+                        >
+                            Running
+                        </CButton>
+                        <CButton
+                            color={statusFilter === 'done' ? 'primary' : 'secondary'}
+                            size="sm"
+                            variant={statusFilter === 'done' ? '' : 'outline'}
+                            onClick={() => handleStatusChange('done')}
+                        >
+                            Done
+                        </CButton>
+                    </div>
                     <CFormSelect
                         style={{ maxWidth: 200 }}
                         value={sortOrder}
@@ -90,6 +149,7 @@ const ReportsManagement = () => {
                                     <CTableHeaderCell scope="col">T5 End</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">Date create</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">View report</CTableHeaderCell>
+                                    <CTableHeaderCell scope="col">View Process</CTableHeaderCell>
                                 </CTableRow>
                             </CTableHead>
                             <CTableBody>
@@ -116,6 +176,19 @@ const ReportsManagement = () => {
                                                 </CButton>
                                             ) : (
                                                 <span className="text-muted">None</span>
+                                            )}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                            {r.isFinished === 'no' || r.isFinished === false ? (
+                                                <CButton
+                                                    color="warning"
+                                                    size="sm"
+                                                    onClick={() => navigate(`/aluminum/heat-furnace/heat-furnace-report?reportId=${r.documentId}`)}
+                                                >
+                                                    View Process
+                                                </CButton>
+                                            ) : (
+                                                <span className="text-muted">-</span>
                                             )}
                                         </CTableDataCell>
                                     </CTableRow>

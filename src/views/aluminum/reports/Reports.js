@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import {
   CCard, CCardBody, CCardHeader, CButton, CRow, CCol, CAlert,
 } from '@coreui/react'
+import { useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { startPolling, stopPolling } from 'src/realtimePolling'
 import { useSelector } from 'react-redux'
@@ -20,7 +21,7 @@ import {
   uploadImage,
   createProduct,
   fetchRangeData,
-  updateGoogleSheet,
+  fetchReportDataById,
 } from '../../../api'
 
 // MUI Stepper
@@ -48,6 +49,10 @@ function getProgressPercent(start, end) {
 }
 
 const Reports = () => {
+  const location = useLocation()
+  const params = new URLSearchParams(location.search)
+  const reportIdParam = params.get('reportId')
+
   const latestData = useSelector(state => state.latestData)
   const [step, setStep] = useStep()
   const [t4Done, setT4Done] = useState(false)
@@ -112,6 +117,82 @@ const Reports = () => {
     const interval = setInterval(() => setTick(tick => tick + 1), 1000)
     return () => clearInterval(interval)
   }, [])
+
+  React.useEffect(() => {
+    if (reportIdParam) {
+      // Fetch report theo id
+      (async () => {
+        setLoading(true)
+        try {
+          const res = await fetchReportDataById(reportIdParam) // Bạn cần viết hàm này
+          const reportData = res.data
+          setReportId(reportIdParam)
+          setReport(reportData)
+          if (reportData.sale) {
+            try {
+              const allProducts = await fetchAllProducts()
+              // Nếu sale là chuỗi nhiều mã cách nhau bằng dấu cách
+              const codes = reportData.sale.split(' ').filter(Boolean)
+              const infos = codes
+                .map(code => allProducts.find(p => p.sale === code || p.ERPCode === code || p.documentId === code))
+                .filter(Boolean)
+              setPartInfos(infos)
+              setPartCodes(codes)
+            } catch (err) {
+              setPartInfos([])
+            }
+          }
+          // Xác định step hiện tại
+          if (!reportData.t4end) {
+            setStep('t4')
+            setT4StartTime(reportData.t4start)
+            setT4EndTime(reportData.t4end)
+            setProcessing(true)
+          } else if (!reportData.t5start) {
+            // Nếu t4EndTime < now thì chuyển luôn sang wait-t5
+            if (new Date(reportData.t4end).getTime() < Date.now()) {
+              setStep('wait-t5')
+              setT4StartTime(reportData.t4start)
+              setT4EndTime(reportData.t4end)
+              setT4Done(true)
+              setProcessing(false)
+            } else {
+              setStep('t4')
+              setT4StartTime(reportData.t4start)
+              setT4EndTime(reportData.t4end)
+              setProcessing(true)
+            }
+          } else if (!reportData.t5end) {
+            // Nếu t5EndTime < now thì chuyển luôn sang done
+            if (new Date(reportData.t5end).getTime() < Date.now()) {
+              setStep('done')
+              setProcessing(false)
+              // Đánh dấu isFinished nếu cần
+              if (reportData.isFinished !== 'yes') {
+                updateReport(reportIdParam, { isFinished: 'yes' }).catch(() => { })
+              }
+            } else {
+              setStep('t5')
+              setT5StartTime(reportData.t5start)
+              setT5EndTime(reportData.t5end)
+              setProcessing(true)
+            }
+          } else {
+            setStep('done')
+            setProcessing(false)
+            // Đánh dấu isFinished nếu cần
+            if (reportData.isFinished !== 'yes') {
+              updateReport(reportIdParam, { isFinished: true }).catch(() => { })
+            }
+          }
+        } catch (err) {
+          setError('Không tìm thấy báo cáo!')
+        }
+        setLoading(false)
+      })()
+    }
+    // eslint-disable-next-line
+  }, [reportIdParam])
 
   // Save partCodes to localStorage
   React.useEffect(() => {
@@ -212,17 +293,17 @@ const Reports = () => {
     setProcessing(true)
 
     // Kiểm tra latestData trước khi bắt đầu T4
-    if (
-      !latestData ||
-      !latestData.t4 ||
-      !Array.isArray(latestData.t4.sensors) ||
-      latestData.t4.sensors.every(v => v === 0)
-    ) {
-      setError('Don\'t receive data from hardware (latestData = 0)!')
-      toast.error('Don\'t receive data from hardware (latestData = 0)!')
-      setProcessing(false)
-      return
-    }
+    // if (
+    //   !latestData ||
+    //   !latestData.t4 ||
+    //   !Array.isArray(latestData.t4.sensors) ||
+    //   latestData.t4.sensors.every(v => v === 0)
+    // ) {
+    //   setError('Don\'t receive data from hardware (latestData = 0)!')
+    //   toast.error('Don\'t receive data from hardware (latestData = 0)!')
+    //   setProcessing(false)
+    //   return
+    // }
 
     setStep('t4')
     const maxT4 = Math.max(...partInfos.map(i => (Number(i.t4time1) || 0) + (Number(i.t4time2) || 0)))
@@ -248,17 +329,17 @@ const Reports = () => {
   const handleStartT5 = async () => {
     setError('')
     setProcessing(true)
-    if (
-      !latestData ||
-      !latestData.t5 ||
-      !Array.isArray(latestData.t5.sensors) ||
-      latestData.t5.sensors.every(v => v === 0)
-    ) {
-      setError('Don\'t receive data from hardware (latestData = 0)!')
-      toast.error('Don\'t receive data from hardware (latestData = 0)!')
-      setProcessing(false)
-      return
-    }
+    // if (
+    //   !latestData ||
+    //   !latestData.t5 ||
+    //   !Array.isArray(latestData.t5.sensors) ||
+    //   latestData.t5.sensors.every(v => v === 0)
+    // ) {
+    //   setError('Don\'t receive data from hardware (latestData = 0)!')
+    //   toast.error('Don\'t receive data from hardware (latestData = 0)!')
+    //   setProcessing(false)
+    //   return
+    // }
     setStep('t5')
     const maxT5 = Math.max(...partInfos.map(i => (Number(i.t5time1) || 0) + (Number(i.t5time2) || 0)))
     setT5Seconds(maxT5 * 60)
@@ -323,6 +404,7 @@ const Reports = () => {
               Add new product
             </CButton>
           </CCardHeader>
+          {/* <ReportResult reportId={reportId} partInfos={partInfos}/> */}
           {/* MUI Stepper */}
           <div
             style={{
@@ -468,6 +550,7 @@ const Reports = () => {
                       ? 'T5 ONLINE'
                       : 'T5 OFFLINE'}
                   </CButton>
+
                 </div>
                 <CButton color="primary" size="sm" onClick={handleStartT5}>
                   Confirm to start T5
@@ -533,7 +616,7 @@ const Reports = () => {
                       <div><b>T5:</b> {info.heatt5}℃ | {info.t5time1} + {info.t5time2} m</div>
                     </div>
                     {/* Camera view */}
-                    <CameraSnapshot url="http://localhost:3001/api/camera/snapshot" />
+                    <CameraSnapshot url="http://117.6.40.130:5001/api/camera/snapshot" />
                   </li>
                 ))}
               </ul>
@@ -556,7 +639,7 @@ const Reports = () => {
                 onClick={() => setShowCamera(false)}
               >
                 <img
-                  src="http://localhost:3001/api/camera/snapshot"
+                  src="http://117.6.40.130:5001/api/camera/snapshot"
                   alt="Camera Snapshot"
                   style={{
                     maxWidth: '90vw',

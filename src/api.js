@@ -123,7 +123,7 @@ export async function updateGoogleSheet({
   t56, t57, t58, t59, t60, t61,
   nsx,
 }) {
-  const res = await fetch('http://localhost:3001/update-sheet', {
+  const res = await fetch('http://117.6.40.130:5001/update-sheet', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -163,3 +163,8 @@ export async function updateGoogleSheet({
   }
 }
 
+export const fetchReportDataById = async (id) => {
+  const res = await fetch(`http://117.6.40.130:1337/api/reports/${id}`)
+  const data = await res.json()
+  return data // hoặc data.data tuỳ API
+}
