@@ -3,32 +3,27 @@ import {
   CCard, CCardBody, CCardHeader, CButton, CRow, CCol, CAlert,
 } from '@coreui/react'
 import { useLocation } from 'react-router-dom'
-import { toast } from 'react-toastify'
 import { startPolling, stopPolling } from 'src/realtimePolling'
 import { useSelector } from 'react-redux'
-import AddProductModal from '../../../components/AddProductModal'
 import PartCodeForm from '../../../components/PartCodeForm'
 import PartInfoList from '../../../components/PartInfoList'
 import ReportResult from '../../../components/ReportResult'
 import CameraSnapshot from '../../../components/CameraSnapshot'
 import LinearProgress from '@mui/material/LinearProgress'
-import { useStep } from 'src/hooks/useStep'
+// import { useStep } from 'src/hooks/useStep'
 import {
   fetchAllProducts,
   createReport,
   updateReport,
   fetchReportData,
-  uploadImage,
-  createProduct,
   fetchRangeData,
   fetchReportDataById,
 } from '../../../api'
-
 // MUI Stepper
 import { Stepper, Step, StepLabel } from '@mui/material'
 import SimpleChart from '../../../components/SimpleChart'
 import { useColorModes } from '@coreui/react'
-import { usePrompt } from '../../../hooks/usePrompt'
+import store from 'src/store'
 
 const initialProduct = {
   sale: '', ERPCode: '', heatt4: '', heatt5: '', customer: '', name: '',
@@ -54,7 +49,7 @@ const Reports = () => {
   const reportIdParam = params.get('reportId')
 
   const latestData = useSelector(state => state.latestData)
-  const [step, setStep] = useStep()
+  const [step, setStep] = useState('idle')
   const [t4Done, setT4Done] = useState(false)
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const [partCodes, setPartCodes] = useState(() => {
@@ -66,13 +61,8 @@ const Reports = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [showModal, setShowModal] = useState(false)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
-  const [newProduct, setNewProduct] = useState(initialProduct)
-  const [addLoading, setAddLoading] = useState(false)
-  const [addError, setAddError] = useState('')
-  const [addSuccess, setAddSuccess] = useState('')
   const [reportId, setReportId] = useState(null)
   const [report, setReport] = useState(null)
   const [t4Seconds, setT4Seconds] = useState(0)
@@ -84,9 +74,22 @@ const Reports = () => {
   const [tick, setTick] = useState(0)
   const [chartData, setChartData] = useState([])
   const [showCamera, setShowCamera] = useState(false)
-  const [isDirty, setIsDirty] = useState(false);
 
-  usePrompt("Có thay đổi chưa lưu. Bạn chắc chắn muốn rời đi?", isDirty);
+  // Polling
+  React.useEffect(() => {
+    const cleanup = startPolling(store)
+    return () => {
+      if (cleanup) cleanup()
+      stopPolling(store)
+    }
+  }, [])
+
+  // Tự động cập nhật tick mỗi 1 giây để kiểm tra tiến trình
+  React.useEffect(() => {
+    const interval = setInterval(() => setTick(tick => tick + 1), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
   React.useEffect(() => {
     let interval
     if ((step === 't4' || step === 't5') && t4StartTime && t4EndTime) {
@@ -102,21 +105,6 @@ const Reports = () => {
     }
     return () => clearInterval(interval)
   }, [step, t4StartTime, t5StartTime, t4EndTime, t5EndTime])
-
-  // Polling
-  React.useEffect(() => {
-    const cleanup = startPolling()
-    return () => {
-      if (cleanup) cleanup()
-      stopPolling()
-    }
-  }, [latestData])
-
-  React.useEffect(() => {
-    // Tự động cập nhật tick mỗi 1 giây để kiểm tra tiến trình
-    const interval = setInterval(() => setTick(tick => tick + 1), 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   React.useEffect(() => {
     if (reportIdParam) {
@@ -194,25 +182,6 @@ const Reports = () => {
     // eslint-disable-next-line
   }, [reportIdParam])
 
-  // Save partCodes to localStorage
-  React.useEffect(() => {
-    localStorage.setItem('partCodes', JSON.stringify(partCodes))
-
-  }, [partCodes, partInfos])
-
-  // Cảnh báo khi đang xử lý
-  React.useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (['t4', 'wait-t5', 't5', 'done'].includes(step)) {
-        e.preventDefault()
-        e.returnValue = ''
-        return ''
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [step])
-
   // Handlers
   const handleAddCode = () => setPartCodes([...partCodes, ''])
   const handleRemoveCode = (idx) => setPartCodes(partCodes.filter((_, i) => i !== idx))
@@ -226,26 +195,6 @@ const Reports = () => {
     const file = e.target.files[0]
     setImageFile(file)
     setImagePreview(file ? URL.createObjectURL(file) : null)
-  }
-
-  const handleAddProduct = async () => {
-    setAddLoading(true)
-    setAddError('')
-    setAddSuccess('')
-    let imageId = null
-    try {
-      if (imageFile) imageId = await uploadImage(imageFile)
-      await createProduct({ ...newProduct, image: imageId })
-      setAddSuccess('Thêm linh kiện thành công!')
-      setNewProduct(initialProduct)
-      setImageFile(null)
-      setImagePreview(null)
-      toast.success('Thêm linh kiện thành công!')
-    } catch {
-      setAddError('Lỗi khi thêm linh kiện!')
-      toast.error('Lỗi khi thêm linh kiện!')
-    }
-    setAddLoading(false)
   }
 
   const handleCheckParts = async (e) => {
@@ -395,14 +344,6 @@ const Reports = () => {
         <CCard>
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <h4>Component Heat Report</h4>
-            <CButton
-              color="success"
-              className="float-end"
-              onClick={() => setShowModal(true)}
-              disabled={step === 't4' || step === 'wait-t5' || step === 'done' || step === 't5'}
-            >
-              Add new product
-            </CButton>
           </CCardHeader>
           {/* <ReportResult reportId={reportId} partInfos={partInfos}/> */}
           {/* MUI Stepper */}
@@ -502,20 +443,6 @@ const Reports = () => {
                 handleCheckParts={handleCheckParts}
               />
             )}
-
-            {/* Modal thêm sản phẩm luôn có thể mở */}
-            <AddProductModal
-              visible={showModal}
-              onClose={() => setShowModal(false)}
-              onAdd={handleAddProduct}
-              loading={addLoading}
-              error={addError}
-              success={addSuccess}
-              newProduct={newProduct}
-              setNewProduct={setNewProduct}
-              imagePreview={imagePreview}
-              handleImageChange={handleImageChange}
-            />
 
             {error && <CAlert color="danger" className="mt-3">{error}</CAlert>}
 

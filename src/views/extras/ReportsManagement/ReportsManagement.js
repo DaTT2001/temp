@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react'
 import {
     CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
     CSpinner, CButton, CFormInput, CInputGroup, CInputGroupText,
-    CCard, CCardHeader, CCardBody, CAlert, CPagination, CPaginationItem, CFormSelect
+    CCard, CCardHeader, CCardBody, CPagination, CPaginationItem, CFormSelect,
+    CModal, CModalHeader, CModalBody, CModalFooter
 } from '@coreui/react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-
+import { toast } from 'react-toastify'
 const PAGE_SIZE = 10
 
 const ReportsManagement = () => {
@@ -17,28 +18,29 @@ const ReportsManagement = () => {
     const [page, setPage] = useState(1)
     const [pageCount, setPageCount] = useState(1)
     const [total, setTotal] = useState(0)
-    const [sortOrder, setSortOrder] = useState('desc') // 'desc' = new → old, 'asc' = old → new
+    const [sortOrder, setSortOrder] = useState('desc')
     const [statusFilter, setStatusFilter] = useState('all')
 
-    // const fetchReports = async (saleNo = '', pageNum = 1, order = 'desc') => {
-    //     setLoading(true)
-    //     try {
-    //         let url = `http://117.6.40.130:1337/api/reports?pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
-    //         if (saleNo) {
-    //             url += `&filters[sale][$contains]=${encodeURIComponent(saleNo)}`
-    //         }
-    //         url += `&sort=createdAt:${order}`
-    //         const res = await axios.get(url)
-    //         setReports(res.data.data || [])
-    //         setPageCount(res.data.meta?.pagination?.pageCount || 1)
-    //         setTotal(res.data.meta?.pagination?.total || 0)
-    //     } catch (err) {
-    //         setReports([])
-    //         setPageCount(1)
-    //         setTotal(0)
-    //     }
-    //     setLoading(false)
-    // }
+    // Modal state
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleteId, setDeleteId] = useState(null)
+
+    const handleDelete = async () => {
+        try {
+            await axios.delete(`http://117.6.40.130:1337/api/reports/${deleteId}`)
+            toast.success('Delete successful!')
+            setShowDeleteModal(false)
+            setDeleteId(null)
+            setPage(1)
+            fetchReports(saleFilter, 1, sortOrder, statusFilter)
+        } catch (err) {
+            toast.error('Delete failed: ' + (err.response?.data?.error?.message || err.message))
+            setShowDeleteModal(false)
+            setDeleteId(null)
+            setLoading(false)
+        }
+    }
+
     const fetchReports = async (saleNo = '', pageNum = 1, order = 'desc', status = 'all') => {
         setLoading(true)
         try {
@@ -71,7 +73,7 @@ const ReportsManagement = () => {
 
     const handleFilterChange = (e) => {
         setSaleFilter(e.target.value)
-        setPage(1) // reset về trang 1 khi filter
+        setPage(1)
     }
 
     const handleSortChange = (e) => {
@@ -86,7 +88,17 @@ const ReportsManagement = () => {
 
     return (
         <CCard>
-            <CCardHeader>Reports list</CCardHeader>
+            <CCardHeader>
+                Reports list
+                <span style={{
+                    fontWeight: 400,
+                    fontSize: 16,
+                    marginLeft: 16,
+                    color: '#888'
+                }}>
+                    {loading ? '' : `(Total: ${total})`}
+                </span>
+            </CCardHeader>
             <CCardBody>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, justifyContent: 'space-between' }}>
                     <CInputGroup style={{ maxWidth: 320 }}>
@@ -135,6 +147,8 @@ const ReportsManagement = () => {
                 </div>
                 {loading ? (
                     <div className="text-center py-5"><CSpinner color="primary" /></div>
+                ) : reports.length === 0 ? (
+                    <div className="text-center py-5 text-muted" style={{ fontSize: 20 }}>There are no reports to display.</div>
                 ) : (
                     <>
                         <CTable striped hover responsive>
@@ -150,6 +164,7 @@ const ReportsManagement = () => {
                                     <CTableHeaderCell scope="col">Date create</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">View report</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">View Process</CTableHeaderCell>
+                                    <CTableHeaderCell scope="col">Delete</CTableHeaderCell>
                                 </CTableRow>
                             </CTableHead>
                             <CTableBody>
@@ -191,29 +206,55 @@ const ReportsManagement = () => {
                                                 <span className="text-muted">-</span>
                                             )}
                                         </CTableDataCell>
+                                        <CTableDataCell>
+                                            <CButton
+                                                color="danger"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setShowDeleteModal(true)
+                                                    setDeleteId(r.documentId)
+                                                }}
+                                            >
+                                                Delete
+                                            </CButton>
+                                        </CTableDataCell>
                                     </CTableRow>
                                 ))}
                             </CTableBody>
                         </CTable>
-                        <div className="d-flex justify-content-between align-items-center mt-3">
-                            <div style={{ fontSize: 13, color: '#888' }}>
-                                Total: {total} reports
-                            </div>
-                            <CPagination align="end" aria-label="pagination">
-                                {[...Array(pageCount)].map((_, i) => (
-                                    <CPaginationItem
-                                        key={i + 1}
-                                        active={page === i + 1}
-                                        onClick={() => setPage(i + 1)}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        {i + 1}
-                                    </CPaginationItem>
-                                ))}
-                            </CPagination>
-                        </div>
+                        <CPagination align="end" aria-label="pagination">
+                            {[...Array(pageCount)].map((_, i) => (
+                                <CPaginationItem
+                                    key={i + 1}
+                                    active={page === i + 1}
+                                    onClick={() => setPage(i + 1)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    {i + 1}
+                                </CPaginationItem>
+                            ))}
+                        </CPagination>
                     </>
                 )}
+
+                {/* Modal xác nhận xóa */}
+                <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+                    <CModalHeader onClose={() => setShowDeleteModal(false)}>
+                        Confirm Delete
+                    </CModalHeader>
+                    <CModalBody>
+                        Are you sure you want to delete this report?
+                    </CModalBody>
+                    <CModalFooter>
+                        <CButton color="secondary" onClick={() => setShowDeleteModal(false)}>
+                            Cancel
+                        </CButton>
+                        <CButton color="danger" onClick={handleDelete}>
+                            Delete
+                        </CButton>
+                    </CModalFooter>
+                </CModal>
             </CCardBody>
         </CCard>
     )

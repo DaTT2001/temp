@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
@@ -25,7 +26,6 @@ import {
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
-import { useStep } from '../hooks/useStep'
 
 const AppHeader = () => {
   const headerRef = useRef()
@@ -33,7 +33,6 @@ const AppHeader = () => {
   const [notificationCount, setNotificationCount] = useState(0)
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
-  const [step] = useStep()
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -41,17 +40,16 @@ const AppHeader = () => {
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
     })
   }, [])
+
   useEffect(() => {
     // Fetch notifications count
-    fetch('http://192.168.10.87:1337/api/notifications')
+    fetch('http://117.6.40.130:1337/api/notifications')
       .then((res) => res.json())
       .then((data) => {
-        // Giả sử API trả về mảng notifications
         setNotificationCount(data?.meta?.pagination?.total || 0)
       })
       .catch(() => setNotificationCount(0))
   }, [notificationCount])
-  if (['t4', 'wait-t5', 't5'].includes(step)) return <div className='mt-5'></div>
 
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
@@ -73,7 +71,6 @@ const AppHeader = () => {
             <CNavLink
               to="/notifications"
               as={NavLink}
-              disabled={['t4', 'wait-t5', 't5', 'done'].includes(step)}
             >
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <CIcon icon={cilBell} size="lg" />
@@ -162,7 +159,6 @@ const AppHeader = () => {
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
       </CContainer>
-
     </CHeader>
   )
 }

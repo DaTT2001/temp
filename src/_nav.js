@@ -47,6 +47,11 @@ const _nav = [
         name: 'Create Report',
         to: '/aluminum/heat-furnace/heat-furnace-report',
       },
+      {
+        component: CNavItem,
+        name: 'Parts List',
+        to: '/aluminum/heat-furnace/parts-list',
+      }
     ],
   },
 

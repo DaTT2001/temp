@@ -6,7 +6,7 @@ const PartInfoList = ({ partInfos, onStart, processing }) => {
   const dispatch = useDispatch()
 
   const handleStart = () => {
-    dispatch({ type: 'set', sidebarShow: false })
+    dispatch({ type: 'set', sidebarShow: true })
     onStart()
   }
 

@@ -13,6 +13,8 @@ const AluminumPreheatingFurnaceG1 = React.lazy(() => import('./views/aluminum/pr
 const AluminumPreheatingFurnaceG2 = React.lazy(() => import('./views/aluminum/preheating-furnace/G2'))
 const AluminumPreheatingFurnaceG3 = React.lazy(() => import('./views/aluminum/preheating-furnace/G3'))
 const AluminumReports = React.lazy(() => import('./views/aluminum/reports/Reports'))
+const PartsList = React.lazy(() => import('./views/aluminum/heat-furnace/PartsList'))
+
 
 // Steel section
 const SteelPreheatingFurnaceDemo1 = React.lazy(() => import('./views/steel/preheating-furnace/Demo1'))
@@ -85,6 +87,7 @@ const routes = [
   { path: '/aluminum/preheating-furnace/g2', name: 'AP2', element: AluminumPreheatingFurnaceG2 },
   { path: '/aluminum/preheating-furnace/g3', name: 'AP1', element: AluminumPreheatingFurnaceG3 },
   { path: '/aluminum/heat-furnace/heat-furnace-report', name: 'Alu Reports', element: AluminumReports },
+  { path: '/aluminum/heat-furnace/parts-list', name: 'Parts list', element: PartsList },
 
   // Steel section
   { path: '/steel/preheating-furnace/demo1', name: 'Demo1', element: SteelPreheatingFurnaceDemo1 },

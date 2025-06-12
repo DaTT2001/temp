@@ -40,7 +40,7 @@ const ReportResult = ({ reportId, partInfos }) => {
   useEffect(() => {
     const fetchReportData = async () => {
       try {
-        const response = await axios.get(`http://192.168.10.87:1337/api/reports/${reportId}`)
+        const response = await axios.get(`http://117.6.40.130:1337/api/reports/${reportId}`)
         if (response.data && response.data.data) {
           setReportData(response.data.data)
         }
@@ -139,7 +139,7 @@ const ReportResult = ({ reportId, partInfos }) => {
         toast.success('Cập nhật Google Sheet thành công!')
         setSheetUrl(url || '')
         if (url && reportId) {
-          await updateReport(reportId, { reportLink: url })
+          await updateReport(reportId, { reportLink: url, isFinished: true })
         }
       } catch (err) {
         toast.error('Cập nhật Google Sheet thất bại!')

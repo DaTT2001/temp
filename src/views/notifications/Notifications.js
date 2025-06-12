@@ -16,7 +16,7 @@ const Notifications = () => {
 
     useEffect(() => {
         setLoading(true)
-        fetch(`http://192.168.10.87:1337/api/notifications?pagination[page]=${page}&pagination[pageSize]=${PAGE_SIZE}&sort[0]=time:desc`)
+        fetch(`http://117.6.40.130:1337/api/notifications?pagination[page]=${page}&pagination[pageSize]=${PAGE_SIZE}&sort[0]=time:desc`)
             .then((res) => res.json())
             .then((data) => {
                 setNotifications(Array.isArray(data.data) ? data.data : [])

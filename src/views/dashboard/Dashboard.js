@@ -49,7 +49,7 @@ import avatar3 from 'src/assets/images/avatars/3.jpg'
 import avatar4 from 'src/assets/images/avatars/4.jpg'
 import avatar5 from 'src/assets/images/avatars/5.jpg'
 import avatar6 from 'src/assets/images/avatars/6.jpg'
-
+import store from 'src/store'
 import { useSelector } from 'react-redux'
 import { startPolling, stopPolling } from 'src/realtimePolling'
 
@@ -59,13 +59,12 @@ import MainChart from './MainChart'
 const Dashboard = () => {
   const latestData = useSelector(state => state.latestData)
   React.useEffect(() => {
-    const cleanup = startPolling()
+    const cleanup = startPolling(store)
     return () => {
       if (cleanup) cleanup()
-      stopPolling()
+      stopPolling(store)
     }
-
-  }, [latestData])
+  }, [])
 
   const sensorKeys = ['t4', 't5', 'g1', 'g2', 'g3']
   const totalSensors = sensorKeys.length * 8 // mỗi cảm biến có 8 sensor
@@ -82,7 +81,6 @@ const Dashboard = () => {
     if (item && Array.isArray(item.sensors) && item.timestamp) {
       // Ép về UTC để so sánh chuẩn
       const ts = new Date(item.timestamp.replace(' ', 'T')).getTime()
-      console.log('now:', now, 'ts:', ts, 'diff:', now - ts)
       if (isNaN(ts) || ts > now || now - ts > MAX_DELAY) {
         errorCount += 8
       } else {

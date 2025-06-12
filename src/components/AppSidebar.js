@@ -18,6 +18,7 @@ import { sygnet } from 'src/assets/brand/sygnet'
 
 // sidebar nav config
 import navigation from '../_nav'
+import { NavLink } from 'react-router-dom'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
@@ -36,7 +37,7 @@ const AppSidebar = () => {
       }}
     >
       <CSidebarHeader className="border-bottom">
-        <CSidebarBrand to="/">
+        <CSidebarBrand as={NavLink} to="/">
           <img
             src={logo}
             alt="VKD King Duan Logo"

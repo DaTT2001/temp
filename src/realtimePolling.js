@@ -1,13 +1,16 @@
+import { formatTemperatureData } from './api'
 import store from './store'
-import { formatTemperatureData, API_BASE_URL } from './api'
-
 const POLLING_INTERVAL = 10000
+let pollingInterval = null
+const API_BASE_URL = 'http://117.6.40.130:8080/api'
+
 let intervals = []
 
-export function startPolling() {
-  if (store.getState().isPolling) return stopPolling
+export function startPolling(store) {
+  if (store.getState().isPolling) return () => stopPolling(store)
 
   const tables = ['t4', 't5', 'g1', 'g2', 'g3']
+  const POLLING_INTERVAL = 10000
 
   const fetchLatestData = async (table) => {
     try {
@@ -37,10 +40,10 @@ export function startPolling() {
 
   store.dispatch({ type: 'setPolling', isPolling: true })
 
-  return stopPolling
+  return () => stopPolling(store)
 }
 
-export function stopPolling() {
+export function stopPolling(store) {
   intervals.forEach(interval => clearInterval(interval))
   intervals = []
   store.dispatch({ type: 'setPolling', isPolling: false })
