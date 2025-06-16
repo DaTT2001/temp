@@ -1,6 +1,11 @@
+version: '3.8'
+
 services:
   react-app:
-    build:
-      context: https://github.com/DaTT2001/temp.git
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
     ports:
       - "3006:3006"
+    command: sh -c "npm install && npm run build && npm install -g serve && serve -s build -l 3006"
