@@ -1,13 +1,31 @@
 import React, { useEffect, useState } from 'react'
 import {
-    CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
-    CSpinner, CButton, CFormInput, CInputGroup, CInputGroupText,
-    CCard, CCardHeader, CCardBody, CPagination, CPaginationItem, CFormSelect,
-    CModal, CModalHeader, CModalBody, CModalFooter
+    CTable,
+    CTableHead,
+    CTableRow,
+    CTableHeaderCell,
+    CTableBody,
+    CTableDataCell,
+    CSpinner,
+    CButton,
+    CFormInput,
+    CInputGroup,
+    CInputGroupText,
+    CCard,
+    CCardHeader,
+    CCardBody,
+    CPagination,
+    CPaginationItem,
+    CFormSelect,
+    CModal,
+    CModalHeader,
+    CModalBody,
+    CModalFooter,
 } from '@coreui/react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import AddReportModal from '../../../components/AddReportModal'
 const PAGE_SIZE = 10
 
 const ReportsManagement = () => {
@@ -20,10 +38,47 @@ const ReportsManagement = () => {
     const [total, setTotal] = useState(0)
     const [sortOrder, setSortOrder] = useState('desc')
     const [statusFilter, setStatusFilter] = useState('all')
+    const [showAddModal, setShowAddModal] = useState(false)
+    const [addLoading, setAddLoading] = useState(false)
+    const [addError, setAddError] = useState('')
+    const [addSuccess, setAddSuccess] = useState('')
 
     // Modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [deleteId, setDeleteId] = useState(null)
+
+    const handleAddReport = async (newReportData) => {
+        setAddLoading(true)
+        setAddError('')
+        setAddSuccess('')
+
+        try {
+            // Format datetime to ISO string và thêm GMT+7 nếu cần
+            const formattedData = {
+                ...newReportData,
+                t4start: newReportData.t4start ? new Date(newReportData.t4start).toISOString() : null,
+                t4end: newReportData.t4end ? new Date(newReportData.t4end).toISOString() : null,
+                t5start: newReportData.t5start ? new Date(newReportData.t5start).toISOString() : null,
+                t5end: newReportData.t5end ? new Date(newReportData.t5end).toISOString() : null,
+                isFinished: !!newReportData.reportLink
+            }
+
+            const response = await axios.post('http://117.6.40.130:1337/api/reports', {
+                data: formattedData
+            })
+
+            setAddSuccess('Report added successfully!')
+            toast.success('Report added successfully!')
+            setShowAddModal(false)
+            fetchReports(saleFilter, 1, sortOrder, statusFilter)
+        } catch (error) {
+            console.error('Error adding report:', error)
+            setAddError(error.response?.data?.error?.message || 'Failed to add report')
+            toast.error('Failed to add report')
+        } finally {
+            setAddLoading(false)
+        }
+    }
 
     const handleDelete = async () => {
         try {
@@ -90,17 +145,35 @@ const ReportsManagement = () => {
         <CCard>
             <CCardHeader>
                 Reports list
-                <span style={{
-                    fontWeight: 400,
-                    fontSize: 16,
-                    marginLeft: 16,
-                    color: '#888'
-                }}>
+                <span
+                    style={{
+                        fontWeight: 400,
+                        fontSize: 16,
+                        marginLeft: 16,
+                        color: '#888',
+                    }}
+                >
                     {loading ? '' : `(Total: ${total})`}
                 </span>
+                <CButton
+                    color="success"
+                    className="float-end"
+                    style={{ minWidth: 160 }}
+                    onClick={() => setShowAddModal(true)}
+                >
+                    Add new report
+                </CButton>
             </CCardHeader>
             <CCardBody>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, justifyContent: 'space-between' }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 16,
+                        marginBottom: 16,
+                        justifyContent: 'space-between',
+                    }}
+                >
                     <CInputGroup style={{ maxWidth: 320 }}>
                         <CInputGroupText>Sale no</CInputGroupText>
                         <CFormInput
@@ -146,9 +219,13 @@ const ReportsManagement = () => {
                     </CFormSelect>
                 </div>
                 {loading ? (
-                    <div className="text-center py-5"><CSpinner color="primary" /></div>
+                    <div className="text-center py-5">
+                        <CSpinner color="primary" />
+                    </div>
                 ) : reports.length === 0 ? (
-                    <div className="text-center py-5 text-muted" style={{ fontSize: 20 }}>There are no reports to display.</div>
+                    <div className="text-center py-5 text-muted" style={{ fontSize: 20 }}>
+                        There are no reports to display.
+                    </div>
                 ) : (
                     <>
                         <CTable striped hover responsive>
@@ -170,22 +247,32 @@ const ReportsManagement = () => {
                             <CTableBody>
                                 {reports.map((r, idx) => (
                                     <CTableRow key={r.id}>
-                                        <CTableHeaderCell scope="row">{(page - 1) * PAGE_SIZE + idx + 1}</CTableHeaderCell>
+                                        <CTableHeaderCell scope="row">
+                                            {(page - 1) * PAGE_SIZE + idx + 1}
+                                        </CTableHeaderCell>
                                         <CTableDataCell>{r.reportcode}</CTableDataCell>
                                         <CTableDataCell>{r.sale}</CTableDataCell>
-                                        <CTableDataCell>{r.t4start ? new Date(r.t4start).toLocaleString() : ''}</CTableDataCell>
-                                        <CTableDataCell>{r.t4end ? new Date(r.t4end).toLocaleString() : ''}</CTableDataCell>
-                                        <CTableDataCell>{r.t5start ? new Date(r.t5start).toLocaleString() : ''}</CTableDataCell>
-                                        <CTableDataCell>{r.t5end ? new Date(r.t5end).toLocaleString() : ''}</CTableDataCell>
-                                        <CTableDataCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</CTableDataCell>
+                                        <CTableDataCell>
+                                            {r.t4start ? new Date(r.t4start).toLocaleString() : ''}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                            {r.t4end ? new Date(r.t4end).toLocaleString() : ''}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                            {r.t5start ? new Date(r.t5start).toLocaleString() : ''}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                            {r.t5end ? new Date(r.t5end).toLocaleString() : ''}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                            {r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}
+                                        </CTableDataCell>
                                         <CTableDataCell>
                                             {r.reportLink ? (
                                                 <CButton
                                                     color="info"
                                                     size="sm"
-                                                    href={r.reportLink}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                    onClick={() => navigate(`/extras/report-details?id=${r.documentId}`)}
                                                 >
                                                     View Report
                                                 </CButton>
@@ -198,7 +285,11 @@ const ReportsManagement = () => {
                                                 <CButton
                                                     color="warning"
                                                     size="sm"
-                                                    onClick={() => navigate(`/aluminum/heat-furnace/heat-furnace-report?reportId=${r.documentId}`)}
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/aluminum/heat-furnace/heat-furnace-report?reportId=${r.documentId}`,
+                                                        )
+                                                    }
                                                 >
                                                     View Process
                                                 </CButton>
@@ -240,12 +331,8 @@ const ReportsManagement = () => {
 
                 {/* Modal xác nhận xóa */}
                 <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-                    <CModalHeader onClose={() => setShowDeleteModal(false)}>
-                        Confirm Delete
-                    </CModalHeader>
-                    <CModalBody>
-                        Are you sure you want to delete this report?
-                    </CModalBody>
+                    <CModalHeader onClose={() => setShowDeleteModal(false)}>Confirm Delete</CModalHeader>
+                    <CModalBody>Are you sure you want to delete this report?</CModalBody>
                     <CModalFooter>
                         <CButton color="secondary" onClick={() => setShowDeleteModal(false)}>
                             Cancel
@@ -255,6 +342,14 @@ const ReportsManagement = () => {
                         </CButton>
                     </CModalFooter>
                 </CModal>
+                <AddReportModal
+                    visible={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onAdd={handleAddReport}
+                    loading={addLoading}
+                    error={addError}
+                    success={addSuccess}
+                />
             </CCardBody>
         </CCard>
     )

@@ -38,15 +38,13 @@ const darkTheme = {
 echarts.registerTheme('light', lightTheme)
 echarts.registerTheme('dark', darkTheme)
 
-const sensorNames = Array.from({ length: 8 }, (_, i) => `Sensor ${i + 1}`)
+const sensorNames = Array.from({ length: 6 }, (_, i) => `Sensor ${i + 1}`)
 
-const SimpleChart = ({ data, colorMode = 'light' }) => {
+const SimpleChart = ({ data, colorMode = 'light', sale, temp }) => {
   // Chuẩn hóa dữ liệu
   const normalized = data.map(d => ({
     timestamp: d.timestamp,
     sensors: [
-      d.sensor1_temperature,
-      d.sensor2_temperature,
       d.sensor3_temperature,
       d.sensor4_temperature,
       d.sensor5_temperature,
@@ -55,8 +53,6 @@ const SimpleChart = ({ data, colorMode = 'light' }) => {
       d.sensor8_temperature,
     ],
   }))
-
-  const timestamps = normalized.map(d => d.timestamp)
 
   // Xác định theme thực tế cho ECharts
   const echartsTheme = colorMode === 'dark' ? 'dark' : 'light'
@@ -83,7 +79,7 @@ const SimpleChart = ({ data, colorMode = 'light' }) => {
 
   const option = {
     title: {
-      text: `${new Date(validData[0].timestamp).toLocaleDateString()}`,
+      text: `${sale || "Charts"}`,
       left: 'center',
     },
     tooltip: {
@@ -91,7 +87,7 @@ const SimpleChart = ({ data, colorMode = 'light' }) => {
       axisPointer: { type: 'cross' },
     },
     legend: {
-      data: sensorNames,
+      data: [...sensorNames, 'Average'],
       top: 40,
       type: 'scroll',
     },
@@ -119,14 +115,55 @@ const SimpleChart = ({ data, colorMode = 'light' }) => {
       nameGap: 45,
       axisLabel: { formatter: '{value} °C' },
     },
-    series: sensorNames.map((name, i) => ({
-      name,
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-      data: validData.map(d => (d.sensors && typeof d.sensors[i] === 'number') ? d.sensors[i] : null),
-      emphasis: { focus: 'series' },
-    })),
+    series: [
+      // Vẽ đủ 6 dòng sensor3 → sensor8
+      ...sensorNames.map((name, i) => ({
+        name,
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        data: validData.map(d =>
+          d.sensors && typeof d.sensors[i] === 'number' ? d.sensors[i] : null
+        ),
+        emphasis: { focus: 'series' },
+      })),
+
+      // Đường chuẩn hóa (Standard Line)
+      {
+        name: 'Standard Line',
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        data: validData.map(() => temp || 0), // Nếu không có temp thì mặc định là 0
+        lineStyle: {
+          type: 'dashed',
+          color: '#ff0000',
+          width: 2,
+        },
+        emphasis: { focus: 'series' },
+      },
+
+      // Đường trung bình (Average)
+      {
+        name: 'Average',
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        data: validData.map(d => {
+          const nums = d.sensors.filter(v => typeof v === 'number');
+          if (nums.length === 0) return null;
+          const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+          return Number(avg.toFixed(2));
+        }),
+        lineStyle: {
+          type: 'dashed',
+          color: '#198754', // xanh lá nổi bật hơn
+          width: 2,
+        },
+        emphasis: { focus: 'series' },
+      },
+    ],
+
   }
 
   return (

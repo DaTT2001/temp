@@ -76,6 +76,7 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 
 //Extras
 const ReportsManagement = React.lazy(() => import('./views/extras/ReportsManagement/ReportsManagement'))
+const ReportDetails = React.lazy(() => import('./views/extras/ReportsManagement/ReportDetails'))
 
 const routes = [
   { path: '/login', name: 'Login', element: Login },
@@ -143,6 +144,7 @@ const routes = [
   { path: '/notifications/toasts', name: 'Toasts', element: Toasts },
   { path: '/widgets', name: 'Widgets', element: Widgets },
   { path: '/extras/reports-management', name: 'Reports Management', element: ReportsManagement },
+  { path: '/extras/report-details', name: 'Report Details', element: ReportDetails },
 ]
 
 export default routes

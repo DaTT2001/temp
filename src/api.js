@@ -1,5 +1,6 @@
-export const API_BASE_URL = 'http://117.6.40.130:8080/api';
 import axios from 'axios';
+export const API_BASE_URL = 'http://117.6.40.130:8080/api';
+// ...existing code...
 export const formatTemperatureData = (record) => ({
   //   timestamp: new Date(record.timestamp).toLocaleTimeString(),
   timestamp: record.timestamp,
@@ -34,7 +35,7 @@ export const fetchDailyData = async (table, date) => {
     // *** Kết thúc sửa ***
 
     // Tạo URL API
-    const apiUrl = `${API_BASE_URL}/${table}?date=${formattedDate}`;
+    const apiUrl = `${API_BASE_URL}/daily/${table}?date=${formattedDate}`;
 
     // Gọi API
     const response = await fetch(apiUrl);
@@ -89,17 +90,89 @@ export const createProduct = async (data) => {
   await axios.post('http://117.6.40.130:1337/api/products', { data })
 }
 
-export const fetchRangeData = async (table, date, startTime, endTime) => {
-  const year = date.getFullYear()
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
-  const formattedDate = `${year}-${month}-${day}`
-  const url = `${API_BASE_URL}/${table}?date=${formattedDate}&start_time=${startTime}&end_time=${endTime}`
-  const response = await fetch(url)
-  if (!response.ok) throw new Error('Fetch error')
-  const result = await response.json()
-  return result.data || []
-}
+export const fetchRangeData1 = async (table, startDateTime, endDateTime) => {
+  ;
+
+  try {
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
+
+    if (isNaN(start) || isNaN(end)) {
+      throw new Error('Invalid date');
+    }
+
+    const startIso = start.toISOString();
+    const endIso = end.toISOString();
+
+    const url = `${API_BASE_URL}/${table}?start_time=${startIso}&end_time=${endIso}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Fetch error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    console.error(`❌ Lỗi khi fetch dữ liệu từ ${table}:`, error);
+    throw error;
+  }
+};
+export const fetchRangeData = async (table, startDateTime, endDateTime) => {
+  try {
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
+
+    if (isNaN(start) || isNaN(end)) {
+      throw new Error('Invalid date');
+    }
+
+    const startIso = start.toISOString();
+    const endIso = end.toISOString();
+
+    const url = `${API_BASE_URL}/${table}?start_time=${startIso}&end_time=${endIso}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Fetch error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    const filteredData = (result.data || []).filter(item => {
+      // Bỏ qua nếu tất cả sensorX_temperature đều bằng 0
+      const sensorValues = Object.entries(item)
+        .filter(([key]) => key.includes('sensor') && key.includes('temperature'))
+        .map(([, value]) => value);
+      return sensorValues.some(val => val !== 0);
+    });
+
+    return filteredData;
+  } catch (error) {
+    console.error(`❌ Lỗi khi fetch dữ liệu từ ${table}:`, error);
+    throw error;
+  }
+};
+
+export const fetchRangeDataResult = async (table, startISO, endISO) => {
+  try {
+    const startUTC = new Date(startISO).toISOString();
+    const endUTC = new Date(endISO).toISOString();
+
+    const url = `${API_BASE_URL}/${table}/sample?start_time=${startUTC}&end_time=${endUTC}`;
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+
+    const result = await response.json();
+
+    // ❌ KHÔNG convert nữa vì server đã trả giờ local
+    return result;
+  } catch (error) {
+    console.error(`Error fetching ${table} data:`, error);
+    throw error;
+  }
+};
 
 export async function updateGoogleSheet({
   maKD,
@@ -153,7 +226,6 @@ export async function updateGoogleSheet({
   const data = await res.json();
   if (data.success) {
     if (data.sheetUrl) {
-      console.log("📄 Link báo cáo:", data.sheetUrl);
       window.open(data.sheetUrl, "_blank"); // ← mở tab mới
     }
 

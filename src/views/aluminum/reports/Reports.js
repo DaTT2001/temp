@@ -16,7 +16,7 @@ import {
   createReport,
   updateReport,
   fetchReportData,
-  fetchRangeData,
+  fetchRangeData1,
   fetchReportDataById,
 } from '../../../api'
 // MUI Stepper
@@ -24,12 +24,6 @@ import { Stepper, Step, StepLabel } from '@mui/material'
 import SimpleChart from '../../../components/SimpleChart'
 import { useColorModes } from '@coreui/react'
 import store from 'src/store'
-
-const initialProduct = {
-  sale: '', ERPCode: '', heatt4: '', heatt5: '', customer: '', name: '',
-  materialgrade: '', hardness: '', pcsmax: '', weight: '',
-  t4time1: '', t4time2: '', t5time1: '', t5time2: '',
-}
 
 const stepKeys = ['idle', 'checked', 't4', 'wait-t5', 't5', 'done']
 
@@ -61,8 +55,6 @@ const Reports = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
   const [reportId, setReportId] = useState(null)
   const [report, setReport] = useState(null)
   const [t4Seconds, setT4Seconds] = useState(0)
@@ -94,12 +86,15 @@ const Reports = () => {
     let interval
     if ((step === 't4' || step === 't5') && t4StartTime && t4EndTime) {
       interval = setInterval(async () => {
+        // Lấy ngày của t4StartTime hoặc t5StartTime
+        const dateObj = new Date(step === 't4' ? t4StartTime : t5StartTime)
+        const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
+        const startTime = dateObj.toTimeString().slice(0, 8)
         const now = new Date()
-        const startTime = new Date(step === 't4' ? t4StartTime : t5StartTime).toTimeString().slice(0, 8)
         const endTime = now.toTimeString().slice(0, 8)
-        // Đổi tên bảng theo step
         const tableName = step === 't4' ? 't4' : 't5'
-        const data = await fetchRangeData(tableName, now, startTime, endTime)
+        const data = await fetchRangeData1(tableName, dateOnly, startTime, endTime)
+
         setChartData(data)
       }, 10000)
     }
@@ -191,12 +186,6 @@ const Reports = () => {
     setPartCodes(newCodes)
   }
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    setImageFile(file)
-    setImagePreview(file ? URL.createObjectURL(file) : null)
-  }
-
   const handleCheckParts = async (e) => {
     e.preventDefault()
     setError('')
@@ -267,7 +256,7 @@ const Reports = () => {
     setT4StartTime(t4start)
     setT4EndTime(t4end)
     try {
-      const id = await createReport({ t4start, t4end, reportcode, sale: codeStr })
+      const id = await createReport({ t4start, t4end, reportcode, sale: codeStr, t4temp: partInfos[0].heatt4, t5temp: partInfos[0].heatt5 })
       setReportId(id)
     } catch {
       setError('Can not create report!')
@@ -597,7 +586,17 @@ const Reports = () => {
               color: colorMode === 'dark' ? 'white' : undefined,
             }}
           >
-            <SimpleChart data={chartData} colorMode={colorMode} />
+            <SimpleChart
+              data={chartData}
+              colorMode={colorMode}
+              temp={
+                step === 't4'
+                  ? (partInfos[0]?.heatt4 || '')
+                  : step === 't5'
+                    ? (partInfos[0]?.heatt5 || '')
+                    : ''
+              }
+            />
           </CCardBody>
         </CCard>
       </CCol>
