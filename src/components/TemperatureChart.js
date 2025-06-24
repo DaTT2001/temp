@@ -169,7 +169,7 @@ const TemperatureChart = ({ tableName, chartTitle }) => {
   
   // Tạo cấu hình (option) cho ECharts, tính toán lại khi dependencies thay đổi
   const echartOptions = useMemo(() => {
-    const SENSOR_NAMES = Array.from({ length: 8 }, (_, i) => `Sensor ${i + 1}`);
+    const SENSOR_NAMES = Array.from({ length: 6 }, (_, i) => `Sensor ${i + 3}`);
     const formattedDateStr = selectedDate.toLocaleDateString('en-GB'); // Định dạng DD/MM/YYYY
 
     // Xử lý trạng thái loading, error, hoặc không có dữ liệu -> hiển thị thông báo trên biểu đồ
@@ -252,7 +252,7 @@ const TemperatureChart = ({ tableName, chartTitle }) => {
         smooth: true, // Làm mượt đường line
         showSymbol: false, // Ẩn các điểm marker trên đường line
         // Lấy dữ liệu sensor thứ i, dùng null nếu giá trị không hợp lệ/thiếu
-        data: validData.map(d => (d.sensors && typeof d.sensors[i] === 'number') ? d.sensors[i] : null),
+        data: validData.map(d => (d.sensors && typeof d.sensors[i + 2] === 'number') ? d.sensors[i + 2] : null),
         emphasis: { focus: 'series' }, // Hiệu ứng khi hover: làm nổi bật series đang hover
       })),
     };
