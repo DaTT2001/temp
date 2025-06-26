@@ -238,7 +238,7 @@ const ReportsManagement = () => {
                                     <CTableHeaderCell scope="col">T4 End</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">T5 Start</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">T5 End</CTableHeaderCell>
-                                    <CTableHeaderCell scope="col">Date create</CTableHeaderCell>
+                                    {/* <CTableHeaderCell scope="col">Date create</CTableHeaderCell> */}
                                     <CTableHeaderCell scope="col">View report</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">View Process</CTableHeaderCell>
                                     <CTableHeaderCell scope="col">Delete</CTableHeaderCell>
@@ -264,9 +264,9 @@ const ReportsManagement = () => {
                                         <CTableDataCell>
                                             {r.t5end ? new Date(r.t5end).toLocaleString() : ''}
                                         </CTableDataCell>
-                                        <CTableDataCell>
+                                        {/* <CTableDataCell>
                                             {r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}
-                                        </CTableDataCell>
+                                        </CTableDataCell> */}
                                         <CTableDataCell>
                                             {r.reportLink ? (
                                                 <CButton

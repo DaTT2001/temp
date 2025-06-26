@@ -52,14 +52,20 @@ const AddReportModal = ({ visible, onClose, onAdd, loading, error, success }) =>
     }
 
     const validateFormData = () => {
-        for (const key in formData) {
-            if (!formData[key]) return 'All fields must be filled.'
-        }
-        if (formData.t4end <= formData.t4start || formData.t5end <= formData.t5start) {
-            return 'End time must be later than start time.'
-        }
-        return null
+    // Chỉ bắt buộc các trường này
+    if (!formData.sale || !formData.t4start || !formData.t4end || !formData.t4temp || !formData.t5temp) {
+        return 'Sale, T4 Start, T4 End, T4 Temp, T5 Temp are required.'
     }
+    // Nếu có end thì kiểm tra logic thời gian
+    if (formData.t4end && formData.t4end <= formData.t4start) {
+        return 'T4 End must be later than T4 Start.'
+    }
+    // Không bắt buộc t5start và t5end, chỉ kiểm tra nếu cả hai đều có
+    if (formData.t5start && formData.t5end && formData.t5end <= formData.t5start) {
+        return 'T5 End must be later than T5 Start.'
+    }
+    return null
+}
 
     const handleSubmit = async (e) => {
         e.preventDefault()
