@@ -86,15 +86,15 @@ const Reports = () => {
     let interval
     if ((step === 't4' || step === 't5') && t4StartTime && t4EndTime) {
       interval = setInterval(async () => {
-        // Lấy ngày của t4StartTime hoặc t5StartTime
+        // Lấy ngày và giờ bắt đầu, cộng thêm 7 tiếng
         const dateObj = new Date(step === 't4' ? t4StartTime : t5StartTime)
-        const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
-        const startTime = dateObj.toTimeString().slice(0, 8)
+        dateObj.setHours(dateObj.getHours() + 7)
         const now = new Date()
-        const endTime = now.toTimeString().slice(0, 8)
+        now.setHours(now.getHours() + 7)
+        const startDateTime = dateObj.toISOString()
+        const endDateTime = now.toISOString()
         const tableName = step === 't4' ? 't4' : 't5'
-        const data = await fetchRangeData1(tableName, dateOnly, startTime, endTime)
-
+        const data = await fetchRangeData1(tableName, startDateTime, endDateTime)
         setChartData(data)
       }, 10000)
     }

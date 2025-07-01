@@ -91,8 +91,6 @@ export const createProduct = async (data) => {
 }
 
 export const fetchRangeData1 = async (table, startDateTime, endDateTime) => {
-  ;
-
   try {
     const start = new Date(startDateTime);
     const end = new Date(endDateTime);
@@ -105,6 +103,8 @@ export const fetchRangeData1 = async (table, startDateTime, endDateTime) => {
     const endIso = end.toISOString();
 
     const url = `${API_BASE_URL}/${table}?start_time=${startIso}&end_time=${endIso}`;
+    console.log(url);
+
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -118,6 +118,7 @@ export const fetchRangeData1 = async (table, startDateTime, endDateTime) => {
     throw error;
   }
 };
+
 export const fetchRangeData = async (table, startDateTime, endDateTime) => {
   try {
     const start = new Date(startDateTime);
