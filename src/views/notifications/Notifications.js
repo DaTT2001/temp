@@ -3,6 +3,7 @@ import {
     CCard, CCardHeader, CCardBody, CListGroup, CListGroupItem,
     CSpinner, CAlert, CPagination, CPaginationItem, CRow, CCol
 } from '@coreui/react'
+import { STRAPI_BASE_URL } from 'src/config'
 
 const PAGE_SIZE = 10
 
@@ -16,7 +17,7 @@ const Notifications = () => {
 
     useEffect(() => {
         setLoading(true)
-        fetch(`http://117.6.40.130:1337/api/notifications?pagination[page]=${page}&pagination[pageSize]=${PAGE_SIZE}&sort[0]=time:desc`)
+        fetch(`${STRAPI_BASE_URL}/notifications?pagination[page]=${page}&pagination[pageSize]=${PAGE_SIZE}&sort[0]=time:desc`)
             .then((res) => res.json())
             .then((data) => {
                 setNotifications(Array.isArray(data.data) ? data.data : [])

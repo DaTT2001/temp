@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react'
+import { STRAPI_BASE_URL } from '../config'
 import { NavLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -43,7 +44,7 @@ const AppHeader = () => {
 
   useEffect(() => {
     // Fetch notifications count
-    fetch('http://117.6.40.130:1337/api/notifications')
+    fetch(`${STRAPI_BASE_URL}/notifications`)
       .then((res) => res.json())
       .then((data) => {
         setNotificationCount(data?.meta?.pagination?.total || 0)

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { STRAPI_BASE_URL } from '../config'
 import {
     CModal,
     CModalHeader,
@@ -39,7 +40,7 @@ const AddReportModal = ({ visible, onClose, onAdd, loading, error, success }) =>
         setSaleExistsError(null)
 
         try {
-            const res = await fetch(`http://117.6.40.130:1337/api/products?filters[sale][$eqi]=${encodeURIComponent(sale)}`)
+            const res = await fetch(`${STRAPI_BASE_URL}/products?filters[sale][$eqi]=${encodeURIComponent(sale)}`)
             const data = await res.json()
             return data.data.length > 0
         } catch (e) {

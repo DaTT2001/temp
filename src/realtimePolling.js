@@ -1,8 +1,8 @@
 import { formatTemperatureData } from './api'
 import store from './store'
+import { API_BASE_URL } from './config'
 const POLLING_INTERVAL = 10000
 let pollingInterval = null
-const API_BASE_URL = 'http://117.6.40.130:8080/api'
 
 let intervals = []
 

@@ -23,6 +23,7 @@ import {
     CModalFooter,
 } from '@coreui/react'
 import axios from 'axios'
+import { STRAPI_BASE_URL } from 'src/config'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import AddReportModal from '../../../components/AddReportModal'
@@ -63,7 +64,7 @@ const ReportsManagement = () => {
                 isFinished: !!newReportData.reportLink
             }
 
-            const response = await axios.post('http://117.6.40.130:1337/api/reports', {
+            const response = await axios.post(`${STRAPI_BASE_URL}/reports`, {
                 data: formattedData
             })
 
@@ -82,7 +83,7 @@ const ReportsManagement = () => {
 
     const handleDelete = async () => {
         try {
-            await axios.delete(`http://117.6.40.130:1337/api/reports/${deleteId}`)
+            await axios.delete(`${STRAPI_BASE_URL}/reports/${deleteId}`)
             toast.success('Delete successful!')
             setShowDeleteModal(false)
             setDeleteId(null)
@@ -99,7 +100,7 @@ const ReportsManagement = () => {
     const fetchReports = async (saleNo = '', pageNum = 1, order = 'desc', status = 'all') => {
         setLoading(true)
         try {
-            let url = `http://117.6.40.130:1337/api/reports?pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
+            let url = `${STRAPI_BASE_URL}/reports?pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
             if (saleNo) {
                 url += `&filters[sale][$contains]=${encodeURIComponent(saleNo)}`
             }
