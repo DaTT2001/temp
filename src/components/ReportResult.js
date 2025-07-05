@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { fetchRangeDataResult, updateGoogleSheet, updateReport } from '../api'
+import { STRAPI_BASE_URL, CAMERA_BASE_URL } from '../config'
 import { CButton, CSpinner, CAlert } from '@coreui/react'
 import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
@@ -42,7 +43,7 @@ const ReportResult = ({ reportId, partInfos }) => {
   useEffect(() => {
     const fetchReportData = async () => {
       try {
-        const response = await axios.get(`http://117.6.40.130:1337/api/reports/${reportId}`)
+        const response = await axios.get(`${STRAPI_BASE_URL}/reports/${reportId}`)
         if (response.data && response.data.data) {
           setReportData(response.data.data)
           setSheetUrl(response.data.data.reportLink || '')
@@ -117,7 +118,7 @@ const ReportResult = ({ reportId, partInfos }) => {
   const updateGoogleSheet = async (payload) => {
 
     try {
-      const response = await fetch('http://117.6.40.130:5001/update-sheet', {
+      const response = await fetch(`${CAMERA_BASE_URL}/update-sheet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

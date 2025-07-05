@@ -18,6 +18,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 import axios from 'axios'
+import { STRAPI_BASE_URL } from 'src/config'
 import { toast } from 'react-toastify'
 
 const Profile = () => {
@@ -41,7 +42,7 @@ const Profile = () => {
     setLoading(true)
     try {
       await axios.post(
-        'http://117.6.40.130:1337/api/auth/change-password',
+        `${STRAPI_BASE_URL}/auth/change-password`,
         {
           currentPassword: oldPassword,
           password: newPassword,

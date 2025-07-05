@@ -1,5 +1,9 @@
 import axios from 'axios';
-export const API_BASE_URL = 'http://117.6.40.130:8080/api';
+import {
+  API_BASE_URL,
+  STRAPI_BASE_URL,
+  CAMERA_BASE_URL,
+} from './config';
 // ...existing code...
 export const formatTemperatureData = (record) => ({
   //   timestamp: new Date(record.timestamp).toLocaleTimeString(),
@@ -59,17 +63,19 @@ export const fetchDailyData = async (table, date) => {
 };
 
 export const fetchAllProducts = async () => {
-  const res = await axios.get('http://117.6.40.130:1337/api/products?populate=image&pagination[page]=1&pagination[pageSize]=1000')
+  const res = await axios.get(
+    `${STRAPI_BASE_URL}/products?populate=image&pagination[page]=1&pagination[pageSize]=1000`
+  )
   return res.data.data
 }
 
 export const createReport = async (data) => {
-  const res = await axios.post('http://117.6.40.130:1337/api/reports', { data })
+  const res = await axios.post(`${STRAPI_BASE_URL}/reports`, { data })
   return res.data.data.documentId
 }
 
 export const updateReport = async (id, data) => {
-  await axios.put(`http://117.6.40.130:1337/api/reports/${id}`, { data })
+  await axios.put(`${STRAPI_BASE_URL}/reports/${id}`, { data })
 }
 
 export const fetchReportData = async (params) => {
@@ -80,14 +86,14 @@ export const fetchReportData = async (params) => {
 export const uploadImage = async (file) => {
   const formData = new FormData()
   formData.append('files', file)
-  const res = await axios.post('http://117.6.40.130:1337/api/upload', formData, {
+  const res = await axios.post(`${STRAPI_BASE_URL}/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
   return res.data[0]?.id
 }
 
 export const createProduct = async (data) => {
-  await axios.post('http://117.6.40.130:1337/api/products', { data })
+  await axios.post(`${STRAPI_BASE_URL}/products`, { data })
 }
 
 export const fetchRangeData1 = async (table, startDateTime, endDateTime) => {
@@ -197,7 +203,7 @@ export async function updateGoogleSheet({
   t56, t57, t58, t59, t60, t61,
   nsx,
 }) {
-  const res = await fetch('http://117.6.40.130:5001/update-sheet', {
+  const res = await fetch(`${CAMERA_BASE_URL}/update-sheet`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -237,7 +243,7 @@ export async function updateGoogleSheet({
 }
 
 export const fetchReportDataById = async (id) => {
-  const res = await fetch(`http://117.6.40.130:1337/api/reports/${id}`)
+  const res = await fetch(`${STRAPI_BASE_URL}/reports/${id}`)
   const data = await res.json()
   return data // hoặc data.data tuỳ API
 }

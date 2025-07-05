@@ -1,8 +1,9 @@
 import React, { createContext, useState, useContext, useEffect } from 'react'
 import axios from 'axios'
+import { STRAPI_BASE_URL } from '../config'
 
 const AuthContext = createContext()
-const API_URL = 'http://117.6.40.130:1337/api'
+const API_URL = STRAPI_BASE_URL
 
 export const useAuth = () => {
   const context = useContext(AuthContext)

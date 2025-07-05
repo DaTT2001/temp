@@ -8,6 +8,7 @@ import CIcon from '@coreui/icons-react'
 import { cilTrash, cilPencil } from '@coreui/icons'
 import AddProductModal from '../../../components/AddProductModal'
 import { uploadImage, createProduct } from '../../../api'
+import { STRAPI_BASE_URL, STRAPI_URL } from 'src/config'
 import { toast } from 'react-toastify'
 
 const PAGE_SIZE = 10
@@ -43,7 +44,7 @@ const PartsList = () => {
   const fetchParts = async (searchValue = '', pageNum = 1) => {
     setLoading(true)
     try {
-      let url = `http://117.6.40.130:1337/api/products?populate=image&pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
+      let url = `${STRAPI_BASE_URL}/products?populate=image&pagination[page]=${pageNum}&pagination[pageSize]=${PAGE_SIZE}`
       if (searchValue) {
         url += `&filters[sale][$contains]=${encodeURIComponent(searchValue)}`
       }
@@ -87,7 +88,7 @@ const PartsList = () => {
       if (editId) {
         // Update logic dùng axios
         const res = await axios.put(
-          `http://117.6.40.130:1337/api/products/${editId}`,
+          `${STRAPI_BASE_URL}/products/${editId}`,
           { data: { ...newProduct, image: imageId } }
         )
         if (!res.data || res.status !== 200) {
@@ -135,9 +136,9 @@ const PartsList = () => {
     })
     setImagePreview(
       part.image?.formats?.thumbnail?.url
-        ? `http://117.6.40.130:1337${part.image.formats.thumbnail.url}`
+        ? `${STRAPI_URL}${part.image.formats.thumbnail.url}`
         : part.image?.url
-          ? `http://117.6.40.130:1337${part.image.url}`
+          ? `${STRAPI_URL}${part.image.url}`
           : null
     )
     setShowModal(true)
@@ -146,7 +147,7 @@ const PartsList = () => {
   // Delete logic
   const handleDelete = async () => {
   try {
-    const res = await axios.delete(`http://117.6.40.130:1337/api/products/${deleteId}`)
+    const res = await axios.delete(`${STRAPI_BASE_URL}/products/${deleteId}`)
     if (res.status !== 200 && res.status !== 204) {
       throw new Error(res.data?.error?.message || 'Delete failed')
     }
@@ -252,13 +253,13 @@ const PartsList = () => {
                     <CTableDataCell>
                       {p.image?.formats?.thumbnail?.url ? (
                         <img
-                          src={`http://117.6.40.130:1337${p.image.formats.thumbnail.url}`}
+                          src={`${STRAPI_URL}${p.image.formats.thumbnail.url}`}
                           alt={p.name}
                           style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }}
                         />
                       ) : p.image?.url ? (
                         <img
-                          src={`http://117.6.40.130:1337${p.image.url}`}
+                          src={`${STRAPI_URL}${p.image.url}`}
                           alt={p.name}
                           style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }}
                         />

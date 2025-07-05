@@ -1,9 +1,10 @@
 // export default CameraSnapshot
 
 import React, { useState, useEffect } from 'react'
+import { CAMERA_BASE_URL } from '../config'
 
 const CameraSnapshot = ({
-    url = 'http://117.6.40.130:5001/api/camera/snapshot',
+    url = `${CAMERA_BASE_URL}/api/camera/snapshot`,
     width = 180,
     height = 120,
     refreshInterval = 5000,

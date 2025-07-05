@@ -5,6 +5,7 @@ import {
 import { useLocation } from 'react-router-dom'
 import { startPolling, stopPolling } from 'src/realtimePolling'
 import { useSelector } from 'react-redux'
+import { STRAPI_URL, CAMERA_BASE_URL } from 'src/config'
 import PartCodeForm from '../../../components/PartCodeForm'
 import PartInfoList from '../../../components/PartInfoList'
 import ReportResult from '../../../components/ReportResult'
@@ -513,13 +514,13 @@ const Reports = () => {
 
                     {info.image?.formats?.thumbnail?.url ? (
                       <img
-                        src={`http://117.6.40.130:1337${info.image.formats.thumbnail.url}`}
+                        src={`${STRAPI_URL}${info.image.formats.thumbnail.url}`}
                         alt={info.name}
                         style={{ width: 160, height: 120, objectFit: 'fill', borderRadius: 8, border: '1px solid #ddd' }}
                       />
                     ) : info.image?.url ? (
                       <img
-                        src={`http://117.6.40.130:1337${info.image.url}`}
+                        src={`${STRAPI_URL}${info.image.url}`}
                         alt={info.name}
                         style={{ width: 160, height: 120, objectFit: 'fill', borderRadius: 8, border: '1px solid #ddd' }}
                       />
@@ -532,7 +533,7 @@ const Reports = () => {
                       <div><b>T5:</b> {info.heatt5}℃ | {info.t5time1} + {info.t5time2} m</div>
                     </div>
                     {/* Camera view */}
-                    <CameraSnapshot url="http://117.6.40.130:5001/api/camera/snapshot" />
+                    <CameraSnapshot url={`${CAMERA_BASE_URL}/api/camera/snapshot`} />
                   </li>
                 ))}
               </ul>
@@ -555,7 +556,7 @@ const Reports = () => {
                 onClick={() => setShowCamera(false)}
               >
                 <img
-                  src="http://117.6.40.130:5001/api/camera/snapshot"
+                  src={`${CAMERA_BASE_URL}/api/camera/snapshot`}
                   alt="Camera Snapshot"
                   style={{
                     maxWidth: '90vw',
